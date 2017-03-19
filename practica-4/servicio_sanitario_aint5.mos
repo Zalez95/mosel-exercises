@@ -1,0 +1,59 @@
+!@encoding CP1252
+model "servicio_sanitario_aint5"
+uses "mmxprs";
+
+! DECLARACIONES 1
+declarations
+	n			: integer;
+	m			: integer;
+end-declarations
+
+! DATOS 1
+fopen("data/aint5.dat", F_INPUT);
+read(m);
+read(n);
+
+! DECLARACIONES 2
+declarations
+	p_demanda	= 1..n;
+	p_servicio	= 1..m;
+	
+	h			: array(p_demanda) of integer;
+	d			: array(p_demanda, p_servicio) of integer;
+	
+	x			: array(p_servicio)	of mpvar;
+	z			: array(p_demanda)	of mpvar;
+end-declarations
+
+! DATOS 2
+forall(i in p_demanda)
+	read(h(i));
+forall(i in p_demanda, j in p_servicio)
+	read(d(i,j));
+fclose(F_INPUT);
+
+! MODELO
+forall(j in p_servicio)
+	x(j) is_binary;
+forall(i in p_demanda)
+	z(i) is_binary;
+
+forall(i in p_demanda)
+	cubrimiento(i) := sum(j in p_servicio | d(i,j) <= 250) x(j) >= z(i);
+
+demanda_cubierta := sum(i in p_demanda) h(i) * z(i);
+
+writeln("Problema 3 servicio sanitario aint5 (n = ", n, ", m = ", m, "):\n");
+forall(P in 1..10) do
+	rest := sum(j in p_servicio) x(j) = P;
+	maximize(demanda_cubierta);
+
+	! SALIDA
+	writeln("P = ", P, ",\tPorcentaje cubierto: ", 100 * getobjval / sum(i in p_demanda) h(i), "%");
+	write("\tPuntos cubiertos:");
+	forall(j in p_servicio | x(j).sol = 1)
+		write(" ", j);
+	write("\n");
+end-do
+
+end-model

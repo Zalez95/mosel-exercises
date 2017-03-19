@@ -1,0 +1,36 @@
+!@encoding CP1252
+model "ambulancias"
+uses "mmxprs"; !gain access to the Xpress-Optimizer solver
+
+! DECLARACIONES
+declarations
+	m			= 20;
+	n			= 10;
+	p_demanda	= 1..m;
+	p_servicio	= 1..n;
+	
+	a			: array(p_demanda, p_servicio) of integer;
+	f			: array(p_servicio) of real;
+	x			: array(p_servicio) of mpvar;
+end-declarations
+	
+! DATOS
+initializations from "data/ambulancias.dat"
+	a;
+end-initializations
+
+! MODELO
+forall(j in p_servicio) f(j) := 1.0;
+forall(j in p_servicio) x(j) is_binary;
+forall(i in p_demanda)
+	recubrimiento(i) := sum(j in p_servicio) a(i,j)*x(j) >= 1;
+num_instal := sum(j in p_servicio) f(j)*x(j);
+
+minimize(XPRS_BAR, num_instal);
+
+! SALIDA
+writeln("Número mínimo de instalaciones de centros de ambulancias: ", getobjval);
+write("Los centros se han de instalar en los puntos:")
+forall(j in p_servicio | x(j).sol = 1) write(" ", j);
+
+end-model

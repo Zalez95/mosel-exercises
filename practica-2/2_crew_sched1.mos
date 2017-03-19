@@ -1,0 +1,36 @@
+!@encoding CP1252
+model "2_crew_sched1"
+uses "mmxprs";
+
+! DECLARACIONES
+declarations
+	m			= 12;
+	n			= 15;
+	p_demanda	= 1..m;
+	p_servicio	= 1..n;
+	a			: array(p_demanda, p_servicio) of integer;
+	f			: array(p_servicio) of real;
+	x			: array(p_servicio) of mpvar;
+end-declarations
+	
+! DATOS
+initializations from "data/2_crew_sched1.dat"
+	a;
+	f;
+end-initializations
+	
+! MODELO
+forall(j in p_servicio) x(j) is_binary;
+forall(i in p_demanda)
+	cubrimiento(i) := sum(j in p_servicio) a(i,j)*x(j)>=1;
+solucion := sum(j in p_servicio) f(j)*x(j);
+
+minimize(XPRS_LIN, solucion);
+
+! SALIDA
+writeln("Problema 2_crew_shed1 (n = ", n.sol, ", m = ", m.sol, "):");
+writeln("\nMínimo coste: ", getobjval);
+forall(j in p_servicio)
+	writeln("x(", j, ")\t= ", x(j).sol);
+
+end-model

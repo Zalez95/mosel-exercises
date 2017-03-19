@@ -1,0 +1,74 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+
+% Configuración páginas
+\usepackage{vmargin}				% Márgenes
+
+\usepackage{sectsty}				% Fuente de los títulos
+\allsectionsfont{\normalfont \Large \scshape}
+
+\usepackage{graphicx}				% Imágenes
+\graphicspath{{images/}}
+
+\usepackage{mathtools}				% Matematicas
+\newcommand\numberthis{				% numeración en align*
+	\addtocounter{equation}{1}\tag{\theequation}
+}
+
+% Configuración del título
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\title{
+	\vspace{-25pt}
+	\normalfont \Large \textsc{
+		Modelos de Investigación Operativa,
+        Ingeniería Informática\\
+        Universidad de Valladolid
+	}\\[10pt]
+	\horrule{1pt}\\[10pt]
+	\huge \textbf{
+		Práctica 2
+	}\\
+	\horrule{1pt}
+}
+\author{
+	\normalfont \Large Daniel González Alonso
+}
+\date{
+	\normalfont \large \today
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+
+%%%% RESUMEN %%%%
+\begin{abstract}
+	En este documento se describen los problemas y los resultados obtenidos de las práctica 2 del tema 2 de la asignatura Modelos de Investigación Operativa de Ingeniería Informática, Universidad de Valladolid.
+\end{abstract}
+
+%%%% DESARROLLO %%%%
+\section{Introducción}
+Esta práctica trata del calculo del problema de Set Covering con datos dados en un array disperso. Estos problemas se resuelven con el mismo modelo que el empleado en la Práctica 1, pero con la peculiaridad de que como los datos de la matriz ${a_{i,j}}$ están muy dispersos, solo se han almacenado aquellos valores donde ${a_{i,j}=1}$, de forma análoga a como se hace en los modelos de redes. Los ejercicios ha resolver son los siguiente:
+
+\section{Ejercicios}
+Este ejercicio consta de dos partes:
+
+\subsection{Parte 1}
+
+Este ejercicio es el ejemplo de Centros de Ambulancias de los apuntes. El problema consta de ${m = 20}$ distritos (puntos de demanda) y ${n = 10}$ posibles puntos de servicio. Este problema trata de minimizar el número de instalaciones, en él, el coste de cada instalación tiene un valor conocido, como no nos dice el valor se supone que siempre es 1.
+
+\begin{itemize}\item[]
+El problema fue resuelto mediante \textit{Xpress Mosel} en el archivo \texttt{ambulancias.mos}, con los datos de ${a_{i,j}}$ en el fichero \texttt{ambulancias.dat}. El resultado obtenido fue que el mínimo número de centros de ambulancias necesarios para cubrir la demanda es de 6 si se instalan los centros en los puntos 2, 3, 4, 6, 8 y 10.
+\end{itemize}
+
+\subsection{Parte 2}
+
+Este problema es el ejemplo 1 de \textit{Crew Scheduling} de \textit{American Airlines}. En este problema tenemos ${m = 12}$ puntos de demanda (la tripulación disponible) y ${n = 15}$ puntos de servicio (vuelos) y hay que minimizar el coste de transportar esta tripulación.
+
+\begin{itemize}\item[]
+Para ello lo primero que se hizo fue introducir los datos del problema en un fichero llamado \texttt{2\_crew\_sched1.dat}, donde se encontrarán los datos de la matriz dispersa ${a_{i,j}}$, donde cada elemento almacenado indica que la tripulación ${i}$ puede ser transportada por el vuelo ${j}$, y los costes de cada vuelo ${f_j}$. El problema fue resuelto mediante \textit{Xpress Mosel} en el archivo \texttt{2\_crew\_sched1.mos}. Los resultados que se obtuvieron fueron que el coste mínimo para transportar a la tripulación es de 9100\$ si se emplean los vuelos ${x_1}$, ${x_9}$ y ${x_{12}}$.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,45 @@
+!@encoding CP1252
+model "NewYork_part2"
+uses "mmxprs";
+
+! DECLARACIONES
+declarations
+	n			= 30;
+	m			= 30;
+	p_servicio	= 1..n;
+	p_demanda	= 1..m;
+	
+	distancia	: array(p_demanda, p_servicio) of real;
+	dc			: integer;
+	
+	x			: array(p_servicio) of mpvar;
+end-declarations
+
+! DATOS
+fopen("data/matriz30x30.dat", F_INPUT);
+forall(i in p_demanda, j in p_servicio)
+	read( distancia(i,j) );
+fclose(F_INPUT);
+
+! SALIDA
+fopen("data/output.csv", F_OUTPUT);
+writeln("dc; n_install");
+forall(k in 1..250) do
+	dc := k 
+	
+	! MODELO
+	n_install := sum(j in p_servicio) x(j);
+
+	forall(i in p_demanda)
+		recub(i) := sum(j in p_servicio | distancia(i,j) <= dc) x(j) >= 1;
+
+	minimize(n_install);
+	
+	writeln(dc.sol, "; ", n_install.sol);
+end-do
+fclose(F_OUTPUT);
+
+writeln("Problema de condados de NY (m = ", m, ", n = ", n, "):\n\n",
+		"Resultados en \"output.csv\"");
+
+end-model

@@ -1,0 +1,187 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+
+% Configuración páginas
+\usepackage{vmargin}				% Márgenes
+
+\usepackage{sectsty}				% Fuente de los títulos
+\allsectionsfont{\normalfont \Large \scshape}
+
+\usepackage{graphicx}				% Imágenes
+\graphicspath{{images/}}
+
+\usepackage{mathtools}				% Matematicas
+\newcommand\numberthis{				% numeración en align*
+	\addtocounter{equation}{1}\tag{\theequation}
+}
+
+% Configuración del título
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\title{
+	\vspace{-25pt}
+	\normalfont \Large \textsc{
+		Modelos de Investigación Operativa,
+        Ingeniería Informática\\
+        Universidad de Valladolid
+	}\\[10pt]
+	\horrule{1pt}\\[10pt]
+	\huge \textbf{
+		Práctica 4
+	}\\
+	\horrule{1pt}
+}
+\author{
+	\normalfont \Large Daniel González Alonso
+}
+\date{
+	\normalfont \large \today
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+
+%%%% RESUMEN %%%%
+\begin{abstract}
+En este documento se describen los problemas y los resultados obtenidos de la práctica 4 del tema 2 de la asignatura Modelos de Investigación Operativa de Ingeniería Informática, Universidad de Valladolid.
+\end{abstract}
+
+%%%% DESARROLLO %%%%
+\section{Introducción}
+
+Esta práctica trata de problemas de cubrimiento máximo. El modelo empleado para resolver estos problemas es el siguiente:
+
+\begin{align*}\numberthis
+   	&\textrm{Maximizar }	&& \sum_{i=1}^{m}{h_i \cdot z_i}		&&				\\
+   	&\textrm{Sujeto a }		&& \sum_{j \in N_{i}}{x_j} \geq z_i 	&& i=1,\ldots,m \\
+    &						&& \sum_{j=1}^{n}{x_j} \leq P			&&				\\
+	&						&& x_{j} \in \{0,1\}					&& j=1,\ldots,n \\
+	&						&& z_{i} \in \{0,1\}					&& i=1,\ldots,m \\
+\end{align*}
+
+Donde ${x_j}$ representa si se abre una instalación en ${j}$ (1) o no (0), ${z_i}$ nos dice si la demanda de ${i}$ queda cubierta (1) o no (0), ${h_i}$ es la demanda de ${i}$ y ${P}$ es el número de instalaciones que se van a abrir. El objetivo del modelo como se puede observar es maximizar la demanda que queda cubierta para un cierto número de instalaciones.
+
+\newpage
+\section{Ejercicios}
+
+Para la práctica 4 se hicieron los siguientes ejercicios:
+
+\subsection{Modelo de localización de Cubrimiento Máximo aplicado a un problema de publicidad}
+
+Los datos disponibles para este problema eran una matriz ${a_{i,j}}$ que nos dice si una persona ${i}$ consume una cierta revista ${j}$, la cual se encuentra en el archivo \texttt{data/publicidad.dat}. Siendo el número de consumidores ${m=50}$ y el número de revistas ${n=10}$. Además se nos dice que la demanda ${h_i=1}$ en todos los casos. El objetivo del problema consiste en maximizar el número de personas a las que se puede cubrir con ${P}$ anuncios (valores entre 1 y 10).\\
+
+Este problema se encuentra resuelto mediante \textit{Xpress Mosel} en el fichero \texttt{publicidad.mos}. Los resultados obtenidos para los distintos valores de ${P}$ se muestran en la siguiente tabla:\\
+
+\begin{table}[!htbp]
+\label{4_max_publicidad}
+\centering
+\begin{tabular}{|l|l|p{3cm}|l|}
+\hline
+Valor de ${P}$	& Puntos instalados  & Porcentaje de demanda cubierta	& Puntos cubiertos	\\ \hline
+1	& 35								& 14\%	& 1, 2, 4, 5, 6, 7, 10			\\ \hline
+2	& 13, 35							& 18\%	& 1, 2, 3, 4, 5, 6, 7, 8, 10	\\ \hline
+3	& 3, 6, 35							& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+4	& 2, 3, 6, 35						& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+5	& 2, 3, 6, 10, 43					& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+6	& 1, 3, 6, 21, 35, 45				& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+7	& 1, 2, 3, 6, 9, 10, 24				& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+8	& 1, 3, 5, 6, 21, 35, 37, 45		& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+9	& 1, 2, 3, 5, 6, 9, 10, 24, 37		& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+10	& 1, 2, 3, 5, 6, 9, 10, 18, 24, 37	& 20\%	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	\\ \hline
+\end{tabular}
+\caption{Resultados Max Covering para el problema de publicidad}
+\end{table}
+
+Como se puede observar en la tabla \ref{4_max_publicidad}, a partir de el número de instalaciones ${P=3}$ el porcentaje de demanda cubierta se mantiene constante, posiblemente debido a que a pesar de llegar a cubrir más puntos no hay suficientes consumidores de esa revista, por ello si buscamos minimizar el número de anuncios publicitarios, ${P=3}$ sea la mejor opción.
+
+\newpage
+\subsection{Problema de cubrimiento máximo para el ejemplo de centros de ambulancias}
+
+Este problema consiste en maximizar la demanda cubierta con ${P}$ instalaciones de ambulancias. Para ello se nos dice que el numero de posibles puntos de instalación es ${m=10}$ y el número de puntos de demanda es ${m=20}$. En el fichero \texttt{data/ambulancias.dat} tenemos los datos del problema, por un lado tenemos la matriz ${a_{i,j}}$, donde un 1 indica que el punto ${i}$ puede ser cubierto por un punto en ${j}$ y un 0 si no. Al ser una matriz dispersa, en el fichero están almacenados solo aquellos valores donde haya un 1. En el fichero también está almacenada la demanda ${h_i}$.\\
+
+El problema ha sido resuelto mediante \textit{Xpress Mosel} en el fichero \texttt{ambulancias.mos}, el cual calcula el modelo anterior con valores de ${P}$ entre 0 y 10. Los resultados obtenidos se muestran en la siguiente tabla:
+
+\begin{table}[!htbp]
+\label{4_max_ambulancias}
+\centering
+\begin{tabular}{|l|l|p{3cm}|p{5cm}|}
+\hline
+Valor de ${P}$	& Puntos instalados  & Porcentaje de demanda cubierta	& Puntos cubiertos	\\ \hline
+1	& 4								& 35.4779\%	& 7, 8, 10, 11, 12, 13													\\ \hline
+2	& 3, 5							& 69.0257\%	& 3, 4, 5, 8, 11, 12, 13, 16, 17										\\ \hline
+3	& 3, 5, 9						& 80.6679\%	& 3, 4, 5, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19						\\ \hline
+4	& 3, 4, 5, 9					& 89.951\%	& 3, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19					\\ \hline
+5	& 3, 4, 6, 8, 10				& 95.3125\%	& 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20			\\ \hline
+6	& 2, 3, 4, 6, 8, 10				& 100\%		& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20	\\ \hline
+7	& 1, 2, 3, 5, 6, 8, 10			& 100\%		& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20	\\ \hline
+8	& 1, 2, 3, 4, 5, 6, 8, 10		& 100\%		& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20	\\ \hline
+9	& 2, 3, 4, 5, 6, 7, 8, 9, 10	& 100\%		& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20	\\ \hline
+10	& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10	& 100\%		& 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20	\\ \hline
+\end{tabular}
+\caption{Resultados Max Covering para el problema de ambulancias}
+\end{table}
+
+Como se puede observar en la tabla \ref{4_max_ambulancias}, a partir del valor ${P=6}$ la demanda se cubierta totalmente.
+
+\newpage
+\subsection{Problema de Servicio Sanitario}
+Para este problema se nos daban dos archivos de datos \texttt{data/aint1.dat} y \texttt{data/aint5.dat} con el formato:
+
+\begin{enumerate}
+\item ${m}$ (número de puntos de demanda)
+\item ${n}$ (número de puntos de servicio)
+\item ${h_i		\ \ i=1,\ldots,m}$ (demandas, una por línea)
+\item ${d_{i,j}	\ \ i=1,\ldots,m \ \ j=1,\ldots,n}$ (matriz ${m \times n}$ de distancias, en Hectómetros)
+\end{enumerate}
+
+Y con estos datos se nos pide resolver el problema de cubrimiento máximo para valores de ${P}$ desde 1 hasta 10, con una distancia de cubrimiento de 250 (25 Km). Para cada valor de ${P}$ hay que obtener el porcentaje de población cubierta a una distancia máxima.
+
+\begin{itemize}
+\item Para el archivo de datos aint1 este problema se encuentra resuelto en el fichero \texttt{servicio\_sanitario\_aint1.mos}. Los resultados obtenidos fueron los siguientes:
+
+\begin{table}[!htbp]
+\label{4_max_servicio_sanitario}
+\centering
+\begin{tabular}{|l|l|}
+\hline
+Valor de ${P}$	& Porcentaje cubierto	\\ \hline
+1	& 84.6573\%	\\ \hline
+2	& 95.2638\%	\\ \hline
+3	& 98.5311\%	\\ \hline
+4	& 100\%		\\ \hline
+5	& 100\%		\\ \hline
+6	& 100\%		\\ \hline
+7	& 100\%		\\ \hline
+8	& 100\%		\\ \hline
+9	& 100\%		\\ \hline
+10	& 100\%		\\ \hline
+\end{tabular}
+\caption{Resultados Max Covering para el problema aint1 de Servicio Sanitario}
+\end{table}
+
+\item Para el archivo de datos aint5 este problema se encuentra resuelto en el fichero \texttt{servicio\_sanitario\_aint5.mos}. Los resultados obtenidos fueron los siguientes:
+\end{itemize}
+
+\begin{table}[!htbp]
+\label{4_max_servicio_sanitario}
+\centering
+\begin{tabular}{|l|l|}
+\hline
+Valor de ${P}$	& Porcentaje cubierto	\\ \hline
+1	& 89.89\%	\\ \hline
+2	& 98.4877\%	\\ \hline
+3	& 99.8096\%	\\ \hline
+4	& 100\%		\\ \hline
+5	& 100\%		\\ \hline
+6	& 100\%		\\ \hline
+7	& 100\%		\\ \hline
+8	& 100\%		\\ \hline
+9	& 100\%		\\ \hline
+10	& 100\%		\\ \hline
+\end{tabular}
+\caption{Resultados Max Covering para el problema aint1 de Servicio Sanitario}
+\end{table}
+
+\end{document}
