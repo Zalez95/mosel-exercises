@@ -1,0 +1,164 @@
+Solucion exacta obtenida para aint1 (n=22, m=356):
+P = 1	Demanda cubierta: 15397
+Porcentaje de la demanda cubierta: 83.1506%
+	Instalaciones abiertas en:
+
+P = 2	Demanda cubierta: 17055
+Porcentaje de la demanda cubierta: 92.1046%
+	Instalaciones abiertas en:
+
+P = 3	Demanda cubierta: 17912
+Porcentaje de la demanda cubierta: 96.7327%
+	Instalaciones abiertas en:
+
+P = 4	Demanda cubierta: 18411
+Porcentaje de la demanda cubierta: 99.4276%
+	Instalaciones abiertas en:
+
+P = 5	Demanda cubierta: 18517
+Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en:
+
+P = 6	Demanda cubierta: 18517
+Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en:
+
+Tiempo total de ejecución: 0.523
+
+Solucion greedy obtenida para aint1 (n=22, m=356):
+P = 1	Demanda cubierta: 15397
+	Porcentaje de la demanda cubierta: 83.1506%
+	Instalaciones abiertas en: 270
+
+P = 2	Demanda cubierta: 16746
+	Porcentaje de la demanda cubierta: 90.4358%
+	Instalaciones abiertas en: 60 270
+
+P = 3	Demanda cubierta: 17802
+	Porcentaje de la demanda cubierta: 96.1387%
+	Instalaciones abiertas en: 60 99 270
+
+P = 4	Demanda cubierta: 18230
+	Porcentaje de la demanda cubierta: 98.4501%
+	Instalaciones abiertas en: 60 86 99 270
+
+P = 5	Demanda cubierta: 18427
+	Porcentaje de la demanda cubierta: 99.514%
+	Instalaciones abiertas en: 60 85 86 99 270
+
+P = 6	Demanda cubierta: 18517
+	Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en: 5 60 85 86 99 270
+
+Tiempo total de ejecución: 0.031
+
+Solucion greedy aleatorizada obtenida para aint1 (n=22, m=356):
+P = 1	Demanda cubierta: 15091
+	Porcentaje de la demanda cubierta: 81.4981%
+	Instalaciones abiertas en: 257
+
+P = 2	Demanda cubierta: 16445
+	Porcentaje de la demanda cubierta: 88.8103%
+	Instalaciones abiertas en: 45 270
+
+P = 3	Demanda cubierta: 17702
+	Porcentaje de la demanda cubierta: 95.5986%
+	Instalaciones abiertas en: 45 99 123
+
+P = 4	Demanda cubierta: 17947
+	Porcentaje de la demanda cubierta: 96.9217%
+	Instalaciones abiertas en: 67 123 302 306
+
+P = 5	Demanda cubierta: 18411
+	Porcentaje de la demanda cubierta: 99.4276%
+	Instalaciones abiertas en: 60 83 99 138 328
+
+P = 6	Demanda cubierta: 18411
+	Porcentaje de la demanda cubierta: 99.4276%
+	Instalaciones abiertas en: 6 86 99 192 257 315
+
+Tiempo total de ejecución: 0.172
+
+
+
+
+Solucion exacta obtenida para aint5 (n=19, m=328):
+P = 1	Demanda cubierta: 8405
+Porcentaje de la demanda cubierta: 88.8854%
+	Instalaciones abiertas en:
+
+P = 2	Demanda cubierta: 9134
+Porcentaje de la demanda cubierta: 96.5948%
+	Instalaciones abiertas en:
+
+P = 3	Demanda cubierta: 9365
+Porcentaje de la demanda cubierta: 99.0376%
+	Instalaciones abiertas en:
+
+P = 4	Demanda cubierta: 9456
+Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en:
+
+P = 5	Demanda cubierta: 9456
+Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en:
+
+P = 6	Demanda cubierta: 9456
+Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en:
+
+Tiempo total de ejecución: 0.844
+
+Solucion greedy obtenida para aint5 (n=19, m=328):
+P = 1	Demanda cubierta: 8405
+	Porcentaje de la demanda cubierta: 88.8854%
+	Instalaciones abiertas en: 210
+
+P = 2	Demanda cubierta: 9097
+	Porcentaje de la demanda cubierta: 96.2035%
+	Instalaciones abiertas en: 16 210
+
+P = 3	Demanda cubierta: 9312
+	Porcentaje de la demanda cubierta: 98.4772%
+	Instalaciones abiertas en: 16 155 210
+
+P = 4	Demanda cubierta: 9404
+	Porcentaje de la demanda cubierta: 99.4501%
+	Instalaciones abiertas en: 16 100 155 210
+
+P = 5	Demanda cubierta: 9456
+	Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en: 15 16 100 155 210
+
+P = 6	Demanda cubierta: 9456
+	Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en: 15 16 100 155 210
+
+Tiempo total de ejecución: 0.031
+
+Solucion greedy aleatorizada obtenida para aint5 (n=19, m=328):
+P = 1	Demanda cubierta: 8111
+	Porcentaje de la demanda cubierta: 85.7762%
+	Instalaciones abiertas en: 305
+
+P = 2	Demanda cubierta: 8895
+	Porcentaje de la demanda cubierta: 94.0673%
+	Instalaciones abiertas en: 178 323
+
+P = 3	Demanda cubierta: 9218
+	Porcentaje de la demanda cubierta: 97.4831%
+	Instalaciones abiertas en: 73 164 305
+
+P = 4	Demanda cubierta: 9356
+	Porcentaje de la demanda cubierta: 98.9425%
+	Instalaciones abiertas en: 109 137 206 214
+
+P = 5	Demanda cubierta: 9429
+	Porcentaje de la demanda cubierta: 99.7145%
+	Instalaciones abiertas en: 3 16 73 100 305
+
+P = 6	Demanda cubierta: 9456
+	Porcentaje de la demanda cubierta: 100%
+	Instalaciones abiertas en: 11 51 137 225 233 307
+
+Tiempo total de ejecución: 0.125

@@ -1,0 +1,120 @@
+!@encoding CP1252
+model "greedy_set_covering_1"
+!uses "mmxprs";
+uses "mmsystem" ! tiempo de ejecucion
+
+! DECLARACIONES 1
+declarations
+	n				: integer;
+	m				: integer;
+	archivo_datos	= "data/matriz30x30.dat";
+end-declarations
+
+! DATOS 1
+fopen(archivo_datos, F_INPUT);
+readln(n);
+readln(m);
+
+! DECLARACIONES 2
+declarations
+	p_servicio	= 1..m;
+	p_demanda	= 1..n;
+	dist		: array(p_demanda, p_servicio) of integer;
+	d			: array(p_servicio) of integer;
+	cubierta	: array(p_demanda) of integer;
+	solucion	: array(p_servicio) of integer;
+	fijada		: array(p_servicio) of integer;
+	a			: array(p_demanda, p_servicio) of integer;
+	w			: array(p_demanda) of integer;
+	dc			= 80;
+end-declarations
+
+! DATOS 2
+forall(i in p_demanda, j in p_servicio)
+	read(dist(i,j));
+fclose(F_INPUT);
+
+! INICIALIZACION
+forall(i in p_demanda, j in p_servicio)
+	if(dist(i,j) <= dc) then
+		a(i,j) := 1;
+	else
+		a(i,j) := 0;
+	end-if
+
+t1 := gettime;	! Tiempo inicial
+
+! Eliminacion de columnas redundantes
+forall(i in p_demanda) do
+	w(i) := 0;
+	forall(j in p_servicio)
+		if(solucion(j) = 1 and a(i,j) = 1) then
+			w(i) := w(i) + 1;
+		end-if
+end-do
+
+writeln("w = ", w);
+forall(k in p_servicio | solucion(k) = 1) do
+	eliminar := 1;
+	forall(i in p_demanda) do
+		if(w(i) < a(i,k) + 1) then
+			eliminar := 0;
+		end-if
+	end-do
+	
+	if (eliminar = 1) then
+		solucion(k) := 0;
+		forall(i in p_demanda)
+			w(i) := w(i) - a(i,k);
+		writeln("Eliminada columna ", k);
+	end-if
+end-do
+
+! Modelo
+num_filas_cubiertas := 0;
+while(num_filas_cubiertas < m) do
+	forall (j in p_servicio | fijada(j) = 0) do
+		d(j) := 0;
+		forall(i in p_demanda)
+			if(cubierta(i) = 0 and a(i,j) = 1) then
+				d(j) := d(j) + 1;
+			end-if
+	
+		! Marcamos las columnas que no cubren ninguna fila
+		if(d(j) = 0) then
+			fijada(j) := 1;
+			solucion(j) := 0;
+		end-if
+	end-do
+
+	aux := -1;
+	forall(j in p_servicio | fijada(j) = 0) do
+		if(d(j) > aux) then
+			aux := d(j);
+			j_max := j;
+		end-if
+	end-do
+
+	solucion(j_max) := 1;
+	fijada(j_max) := 1;
+	
+	! Quitar las filas que cubre jmax
+	forall(i in p_demanda) do
+		if(cubierta(i) = 0 and a(i, j_max) = 1) then
+			cubierta(i) := 1;
+			num_filas_cubiertas := num_filas_cubiertas + 1;
+		end-if
+	end-do
+end-do
+
+t2 := gettime;	! Tiempo tras ejecutar el algoritmo
+
+! SALIDA
+writeln("Solucion greedy obtenida:");
+writeln("\tNúmero de instalaciones: ", sum(j in p_servicio) solucion(j));
+write("\tInstalaciones abiertas: ");
+forall(j in p_servicio | solucion(j) = 1)
+	write(j, " ")
+writeln("\nTiempo de ejecucion del algoritmo: ", (t2 - t1));
+
+end-model

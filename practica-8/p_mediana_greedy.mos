@@ -1,0 +1,96 @@
+!@encoding CP1252
+model "p_mediana_exacta"
+uses "mmive";
+
+! DEFINICION DE FUNCIONES
+function getIndiceMinimo(a : array(r : range) of integer) : integer
+	aux := MAX_INT;
+	forall(i in r)
+		if(a(i) < aux) then
+			aux := a(i);
+			ret := i;
+		end-if
+
+	returned := ret;
+end-function
+
+
+! DECLARACIONES 1
+declarations
+	n				: integer;
+	m				: integer;
+	fichero_datos	= "data/coordenadas_15.dat";
+	rango_P			= 1..10;
+end-declarations
+
+! INICIALIZACION 1
+fopen(fichero_datos, F_INPUT);
+read(n);
+m := n;
+
+! DECLARACIONES 2
+declarations
+	p_servicio	= 1..n;
+	p_demanda	= 1..m;
+	
+	coords		: array(p_demanda, 1..2) of integer;
+	
+	z			: array(p_servicio) of integer;
+	x			: array(p_servicio) of integer;
+	h			: array(p_demanda) of integer;
+	d			: array(p_demanda, p_servicio) of integer;
+	d_actual	: array(p_demanda) of integer;
+end-declarations
+
+! INICIALIZACION 2
+forall(i in p_demanda) do
+	indice := 0;
+	read(indice);
+	read(coords(i,1));
+	read(coords(i,2));
+	read(h(i));
+end-do
+fclose(F_INPUT);
+
+! Calculamos las distancias mediante la distancia euclídea
+forall(i in p_demanda, j in p_servicio)
+	d(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));
+
+
+! MODELO
+writeln("Práctica 8 P-mediana greedy (n=", n, ", m=", m, "):");
+forall(P in rango_P) do
+	! Distancias iniciales de d_actual
+	forall(i in p_demanda)
+		d_actual(i) := 10000000;
+		
+	! Valores iniciales de x
+	forall(j in p_servicio)
+		x(j) := 0;
+		
+	forall(k in 1..P) do
+		! 1. Calculamos todos los z_j		
+		forall(j in p_servicio | x(j) = 0)
+			z(j) := sum(i in p_demanda) h(i) * minlist(d_actual(i), d(i,j));
+		
+		! 2. Obtenemos el indice del minimo de los z_j
+		j_min := getIndiceMinimo(z);
+		
+		! 3. fijamos j_min en el vector x
+		x(j_min) := 1;
+		
+		! 4. Actualizamos d_actual
+		forall(i in p_demanda)
+			d_actual(i) := minlist(d_actual(i), d(i, j_min)); 
+	end-do
+	
+	! SALIDA
+	write("P = ", P, "\tx =");
+	forall(j in p_servicio)
+		write(" ", x(j));
+	write("\n");
+	
+	writeln("\tDistancia total: ", sum(i in p_demanda) h(i) * d_actual(i));
+end-do
+
+end-model

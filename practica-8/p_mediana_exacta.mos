@@ -1,0 +1,82 @@
+!@encoding CP1252
+model "p_mediana_exacta"
+uses "mmxprs";
+uses "mmive";
+
+! DECLARACIONES 1
+declarations
+	n : integer;
+	m : integer;
+end-declarations
+
+! INICIALIZACION 1
+fopen("data/coordenadas_15.dat", F_INPUT);
+read(n);
+m := n;
+
+! DECLARACIONES 2
+declarations
+	p_servicio	= 1..n;
+	p_demanda	= 1..m;
+	
+	coords		: array(p_demanda, 1..2) of integer;
+	
+	d			: array(p_demanda, p_servicio) of integer;
+	h			: array(p_demanda) of integer;
+	
+	y			: array(p_demanda, p_servicio) of mpvar;
+	x			: array(p_servicio) of mpvar;
+end-declarations
+
+! INICIALIZACION 2
+indice := 0;
+forall(i in p_demanda) do
+	read(indice);
+	read(coords(i,1));
+	read(coords(i,2));
+	read(h(i));
+end-do
+fclose(F_INPUT);
+
+! Calculamos las distancias mediante la distancia euclídea
+forall(i in p_demanda)
+	forall(j in p_servicio)
+		d(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));
+
+! MODELO
+! Variables binarias para x e y
+forall(j in p_servicio)
+	x(j) is_binary;
+forall(i in p_demanda, j in p_servicio)
+	y(i,j) is_binary;
+
+! Todos los puntos de demanda quedan cubiertos
+forall(i in p_demanda)
+	cubrimiento(i) := sum(j in p_servicio) y(i,j) = 1;
+
+forall(i in p_demanda, j in p_servicio)
+	rest(i,j) := y(i,j) <= x(j);
+
+! Valor a minimizar
+z := sum(i in p_demanda, j in p_servicio) h(i) * d(i,j) * y(i,j);
+
+writeln("Práctica 8 P-mediana exacta (n=", n, ", m=", m, "):");
+forall(P in 1..10) do
+	! Numero de instalaciones
+	num_instalaciones := sum(j in p_servicio) x(j) = P;
+	minimize(z);
+	
+	! SALIDA
+	writeln("P = ", P, "\tz = ", getobjval);
+	! Dibujamos las flechas al gráfico
+	plot := IVEaddplot("P = "+P, IVE_BLUE);
+	forall(i in p_demanda, j in p_servicio | y(i,j).sol = 1)
+		IVEdrawarrow(plot, coords(i,1), coords(i,2), coords(j,1), coords(j,2));
+end-do
+
+! Añadimos las etiquetas al gráfico
+plot := IVEaddplot("labels", IVE_BLACK);
+forall(i in p_demanda)
+	IVEdrawlabel(plot, coords(i,1), coords(i,2), ""+i);
+
+end-model

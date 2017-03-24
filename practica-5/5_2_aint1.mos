@@ -1,65 +1,64 @@
 !@encoding CP1252
 model "5_2_aint1"
-uses "mmxprs";
-
-! DECLARACIONES 1
-declarations
-	n		: integer;
-	m		: integer;
-	P		= 5;
-end-declarations
-
-! INICIALIZACION 1
-fopen("data/aint1.dat", F_INPUT);
-read(m);
-read(n);
-
-! DECLARACIONES 2
-declarations
-	p_servicio	= 1..n;
-	p_demanda	= 1..m;
+	uses "mmxprs";
 	
-	coords		: array(p_demanda, 1..2) of integer;
+	! DECLARACIONES 1
+	declarations
+		n		: integer;
+		m		: integer;
+		P		= 5;
+	end-declarations
 	
-	d			: array(p_demanda, p_servicio) of real;
-	h			: array(p_demanda) of integer;
+	! INICIALIZACION 1
+	fopen("data/aint1.dat", F_INPUT);
+	read(m);
+	read(n);
 	
-	y			: array(p_demanda, p_servicio) of mpvar;
-	x			: array(p_servicio) of mpvar;
-end-declarations
-
-! INICIALIZACION 2
-forall(i in p_demanda)
-	read(h(i));
-forall(i in p_demanda, j in p_servicio)
-	read(d(i,j));
-fclose(F_INPUT);
-
-! MODELO
-! Variables binarias para x e y
-forall(j in p_servicio)
-	x(j) is_binary;
-forall(i in p_demanda, j in p_servicio)
-	y(i,j) is_binary;
-
-! Todos los puntos de demanda quedan cubiertos
-forall(i in p_demanda)
-	cubrimiento(i) := sum(j in p_servicio) y(i,j) = 1;
-
-forall(i in p_demanda, j in p_servicio)
-	rest(i,j) := y(i,j) <= x(j);
-
-! Numero de instalaciones
-num_instalaciones := sum(j in p_servicio) x(j) = P;
-
-! Valor a minimizar
-z := sum(i in p_demanda) sum(j in p_servicio) h(i) * d(i,j) * y(i,j);
-minimize(z);
-
-! SALIDA
-writeln("Práctica 5.2 P-mediana aint1 (n=", n, ", m=", m, "):");
-writeln("P = ", P, "\tz = ", getobjval);
-writeln("\tDistancia promedio = ", getobjval / sum(i in p_demanda) h(i));
-writeln("\tDistancia máxima = ", max(i in p_demanda, j in p_servicio | y(i,j).sol = 1) d(i,j));
-
+	! DECLARACIONES 2
+	declarations
+		p_servicio	= 1..n;
+		p_demanda	= 1..m;
+		
+		coords		: array(p_demanda, 1..2) of integer;
+		
+		d			: array(p_demanda, p_servicio) of real;
+		h			: array(p_demanda) of integer;
+		
+		y			: array(p_demanda, p_servicio) of mpvar;
+		x			: array(p_servicio) of mpvar;
+	end-declarations
+	
+	! INICIALIZACION 2
+	forall(i in p_demanda)
+		read(h(i));
+	forall(i in p_demanda, j in p_servicio)
+		read(d(i,j));
+	fclose(F_INPUT);
+	
+	! MODELO
+	! Variables binarias para x e y
+	forall(j in p_servicio)
+		x(j) is_binary;
+	forall(i in p_demanda, j in p_servicio)
+		y(i,j) is_binary;
+	
+	! Todos los puntos de demanda quedan cubiertos
+	forall(i in p_demanda)
+		cubrimiento(i) := sum(j in p_servicio) y(i,j) = 1;
+	
+	forall(i in p_demanda, j in p_servicio)
+		rest(i,j) := y(i,j) <= x(j);
+	
+	! Numero de instalaciones
+	num_instalaciones := sum(j in p_servicio) x(j) = P;
+	
+	! Valor a minimizar
+	z := sum(i in p_demanda) sum(j in p_servicio) h(i) * d(i,j) * y(i,j);
+	minimize(z);
+	
+	! SALIDA
+	writeln("Práctica 5.2 P-mediana aint1 (n=", n, ", m=", m, "):");
+	writeln("P = ", P, "\tz = ", getobjval);
+	writeln("\tDistancia promedio = ", getobjval / sum(i in p_demanda) h(i));
+	writeln("\tDistancia máxima = ", max(i in p_demanda, j in p_servicio | y(i,j).sol = 1) d(i,j));	
 end-model
