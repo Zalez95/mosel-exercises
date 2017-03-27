@@ -10,7 +10,7 @@ declarations
 end-declarations
 
 ! INICIALIZACION 1
-fopen("data/coordenadas_15.dat", F_INPUT);
+fopen("coordenadas_15.dat", F_INPUT);
 read(n);
 m := n;
 

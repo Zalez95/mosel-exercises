@@ -8,10 +8,12 @@ model "max_covering_aint1"
 		n				: integer;
 		m				: integer;
 		DC				= 200;
+		MAX_P			= 6;
 		MAX_K			= 5;
-		RANGO_P			= 1..6;
+		MAX_N			= 100;
+		RANGO_P			= 1..MAX_P;
 		RANGO_K			= 1..MAX_K;
-		RANGO_N			= 1..100;
+		RANGO_N			= 1..MAX_N;
 		archivo_datos	= "data/aint1.dat";
 	end-declarations
 	
@@ -37,6 +39,7 @@ model "max_covering_aint1"
 		
 		indices_rcl		: array(RANGO_K) of integer;
 		banderas_rcl	: array(p_servicio) of integer;
+		solucion2		: array(p_servicio) of integer;
 	end-declarations
 	
 	! DATOS 2
@@ -56,8 +59,10 @@ model "max_covering_aint1"
 	end-do
 	fclose(F_INPUT);
 	
-
-	! **** SOLUCION EXACTA XPRESS **** !
+	
+	!==============================================================================
+	! SOLUCION EXACTA XPRESS
+	!==============================================================================
 	forall(j in p_servicio)
 		x(j) is_binary;
 	forall(i in p_demanda)
@@ -77,7 +82,7 @@ model "max_covering_aint1"
 		! SALIDA
 		write("P = ", p);
 		writeln("\tDemanda cubierta: ", getobjval);
-		writeln("\Porcentaje de la demanda cubierta: ", 100 * getobjval / demanda_total, "%");
+		writeln("\tPorcentaje de la demanda cubierta: ", 100 * getobjval / demanda_total, "%");
 		write("\tInstalaciones abiertas en: ");
 		forall(j in p_servicio | solucion(j).sol = 1)
 			write(" ", j);
@@ -87,34 +92,34 @@ model "max_covering_aint1"
 	writeln("Tiempo total de ejecución: ", t2 - t1, "\n");
 	
 	
-	! **** SOLUCION GREEDY **** !
+	!==============================================================================
+	! SOLUCION GREEDY
+	!==============================================================================
 	t1 := gettime;
 	writeln("Solucion greedy obtenida para aint1 (n=", n, ", m=", m, "):");
 	forall(p in RANGO_P) do
 		! Inicamos los valores necesarios para la iteracion actual
-		num_instalaciones	:= 0;
-		demanda_cubierta_g	:= 0;
+		num_instalaciones := 0;
+		demanda_cubierta1 := 0;
 		forall(i in p_demanda) do
-			demandas2(i)	:= demandas(i);
+			demandas2(i) := demandas(i);
 		end-do
 		forall(j in p_servicio) do
-			ya_fijadas(j)	:= 0;
-			solucion(j)		:= 0;
+			ya_fijadas(j) := 0;
+			solucion(j) := 0;
 		end-do
 		
 		! Algoritmo principal
-		while(num_instalaciones < p and demanda_cubierta_g < demanda_total) do
+		while(num_instalaciones < p and demanda_cubierta1 < demanda_total) do
 			! Buscamos el punto que cubre la mayor demanda en la iteracion actual
-			aux		:= -1;
-			j_max	:= -1;
+			aux := -1;
+			j_max := -1;
 			forall(j in p_servicio | ya_fijadas(j) <> 1) do
-				sum_demanda := 0;
-				forall(i in p_demanda | cubrimientos(i,j) = 1)
-					sum_demanda += demandas2(i);
+				sum_demanda := sum(i in p_demanda | cubrimientos(i,j) = 1) demandas2(i);
 				
 				if(sum_demanda = 0) then
-					ya_fijadas(j)	:= 1;
-					solucion(j)		:= 0;
+					ya_fijadas(j) := 1;
+					solucion(j) := 0;
 				elif(sum_demanda > aux) then
 					aux := sum_demanda;
 					j_max := j;
@@ -125,7 +130,7 @@ model "max_covering_aint1"
 			ya_fijadas(j_max)	:= 1;
 			solucion(j_max)		:= 1;
 			num_instalaciones	+= 1;
-			demanda_cubierta_g	+= aux;
+			demanda_cubierta1	+= aux;
 			
 			! Eliminamos la demanda ya cubierta	
 			forall(i in p_demanda | cubrimientos(i,j_max) = 1)
@@ -134,8 +139,8 @@ model "max_covering_aint1"
 		
 		! SALIDA
 		write("P = ", p);
-		writeln("\tDemanda cubierta: ", demanda_cubierta_g);
-		writeln("\tPorcentaje de la demanda cubierta: ", 100 * demanda_cubierta_g / demanda_total, "%");
+		writeln("\tDemanda cubierta: ", demanda_cubierta1);
+		writeln("\tPorcentaje de la demanda cubierta: ", 100 * demanda_cubierta1 / demanda_total, "%");
 		write("\tInstalaciones abiertas en: ");
 		forall(j in p_servicio | solucion(j).sol = 1)
 			write(j, " ");
@@ -145,67 +150,80 @@ model "max_covering_aint1"
 	writeln("Tiempo total de ejecución: ", t2 - t1, "\n");
 	
 	
-	! **** SOLUCION GREEDY ALEATORIZADA **** !
+	!==============================================================================
+	! SOLUCION GREEDY ALEATORIZADA
+	!==============================================================================
 	t1 := gettime;
-	writeln("Solucion greedy aleatorizada obtenida para aint1 (n=", n, ", m=", m, "):");
+	writeln("Solucion greedy aleatorizada (K=", MAX_K, ", N=", MAX_N, ") ",
+			"obtenida para aint1 (n=", n, ", m=", m, "):");
 	forall(p in RANGO_P) do
 		! Inicamos los valores necesarios para la iteracion actual
-		num_instalaciones	:= 0;
-		demanda_cubierta_g	:= 0;
-		forall(i in p_demanda)
-			demandas2(i)	:= demandas(i);
-			
-		forall(j in p_servicio) do
-			ya_fijadas(j)	:= 0;
-			solucion(j)		:= 0;
-		end-do
+		demanda_cubierta1 := 0;
 		
-		! Algoritmo principal
-		while(num_instalaciones < p and demanda_cubierta_g < demanda_total) do
-			! Reiniciamos las banderas de la lista RCL
-			forall(j in p_servicio)
-				banderas_rcl(j) := 0;
-		
-			! Creamos la lista RCL
-			forall(k in RANGO_K) do
-				aux		:= -1;
-				j_max	:= -1;
-				forall(j in p_servicio | ya_fijadas(j) <> 1 and banderas_rcl(j) <> 1) do
-					sum_demanda := 0;
-					forall(i in p_demanda | cubrimientos(i,j) = 1)
-						sum_demanda += demandas2(i);
-					
-					if(sum_demanda = 0) then
-						ya_fijadas(j)	:= 1;
-						solucion(j)		:= 0;
-					elif(sum_demanda > aux) then
-						aux := sum_demanda;
-						j_max := j;
-					end-if
-				end-do
-				
-				banderas_rcl(j_max) := 1;
-				indices_rcl(k) := j_max;
+		! Ejecutamos el algoritmo principal con la lista RCL N veces y nos quedamos
+		! con la mejor solucion obtenida
+		forall(n2 in RANGO_N) do
+			! Reinicamos los valores necesarios
+			num_instalaciones	:= 0;
+			demanda_cubierta2	:= 0;
+			demandas2			:= demandas;
+			forall(j in p_servicio) do
+				ya_fijadas(j)	:= 0;
+				solucion2(j)	:= 0;
 			end-do
-		
-			! Elegimos uno de los indices de la lista RCL aleatoriamente
-			indice_s := indices_rcl( ceil(random * MAX_K) );
-		
-			! Fijamos el punto s y lo añadimos a la solucion
-			ya_fijadas(indice_s)	:= 1;
-			solucion(indice_s)		:= 1;
-			num_instalaciones		+= 1;
-			demanda_cubierta_g		+= sum(i in p_demanda | cubrimientos(i,indice_s) = 1) demandas2(i);
-		
-			! Eliminamos la demanda ya cubierta	
-			forall(i in p_demanda | cubrimientos(i,indice_s) = 1)
-				demandas2(i) := 0;
+			
+			! Algoritmo principal con lista RCL
+			while(num_instalaciones < p and demanda_cubierta2 < demanda_total) do
+				! Reiniciamos las banderas de la lista RCL
+				forall(j in p_servicio)
+					banderas_rcl(j) := 0;
+			
+				! Creamos la lista RCL
+				forall(k in RANGO_K) do
+					aux		:= -1;
+					j_max	:= -1;
+					forall(j in p_servicio | ya_fijadas(j) <> 1 and banderas_rcl(j) <> 1) do
+						sum_demanda := sum(i in p_demanda | cubrimientos(i,j) = 1) demandas2(i);
+						
+						if(sum_demanda = 0) then
+							ya_fijadas(j)	:= 1;
+							solucion(j)		:= 0;
+						elif(sum_demanda > aux) then
+							aux := sum_demanda;
+							j_max := j;
+						end-if
+					end-do
+					
+					banderas_rcl(j_max) := 1;
+					indices_rcl(k) := j_max;
+				end-do
+			
+				! Elegimos uno de los indices de la lista RCL aleatoriamente
+				indice_s := indices_rcl( ceil(random * MAX_K) );
+			
+				! Fijamos el punto s y lo añadimos a la solucion
+				ya_fijadas(indice_s)	:= 1;
+				solucion(indice_s)		:= 1;
+				num_instalaciones		+= 1;
+				demanda_cubierta2		+= sum(i in p_demanda | cubrimientos(i,indice_s) = 1) demandas2(i);
+			
+				! Eliminamos la demanda ya cubierta	
+				forall(i in p_demanda | cubrimientos(i,indice_s) = 1)
+					demandas2(i) := 0;
+			end-do
+			
+			! Si la demanda cubierta en la iteracion n supera a la cubierta en las
+			! anteriores actualizamos la solucion anterior con la actual
+			if(demanda_cubierta2 > demanda_cubierta1) then
+				demanda_cubierta1 := demanda_cubierta2;
+				solucion := solucion2;
+			end-if
 		end-do
 		
 		! SALIDA
 		write("P = ", p);
-		writeln("\tDemanda cubierta: ", demanda_cubierta_g.sol);
-		writeln("\tPorcentaje de la demanda cubierta: ", 100 * demanda_cubierta_g / demanda_total, "%");
+		writeln("\tDemanda cubierta: ", demanda_cubierta1);
+		writeln("\tPorcentaje de la demanda cubierta: ", 100 * demanda_cubierta1 / demanda_total, "%");
 		write("\tInstalaciones abiertas en: ");
 		forall(j in p_servicio | solucion(j).sol = 1)
 			write(j, " ");

@@ -1,5 +1,6 @@
 !@encoding CP1252
 model "greedy_set_covering_1"
+!uses "mmxprs";
 uses "mmsystem" ! tiempo de ejecucion
 
 ! DECLARACIONES 1
