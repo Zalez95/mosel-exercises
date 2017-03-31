@@ -11,6 +11,7 @@
 \usepackage{graphicx}							% Imágenes
 \graphicspath{{images/}}
 
+\usepackage{listliketab}						% Tratar indentacion distas como tablas
 \usepackage{tabularx}
 \usepackage{multirow}							% Ocupar multiples filas en tablas
 
@@ -31,7 +32,7 @@
 	}\\[10pt]
 	\horrule{1pt}\\[10pt]
 	\huge \textbf{
-		Práctica 6
+		Práctica 7
 	}\\
 	\horrule{1pt}
 }
@@ -73,21 +74,24 @@ Para esta práctica se nos pide resolver el problema de cubrimiento máximo para
 
 Esta práctica se encuentra resuelta mediante \textit{Xpress Mossel} en los archivos \texttt{max\_covering \_aint1.mos} y \texttt{max\_covering\_aint5.mos} (el nombre indica el fichero de datos empleado). En cada uno de los ficheros se resuelve el problema con los métodos pedidos.\\
 
-Para resolver esta práctica en cada uno de los ficheros lo primero que se hizo fue cargar los datos del fichero. El formato de los datos \textit{aint} es el siguiente:
+Para resolver esta práctica en cada uno de los ficheros lo primero que se hizo fue cargar los datos. El formato de los datos \textit{aint} es el siguiente:
 
-\begin{enumerate}
-\item ${m}$ (número de puntos de demanda)
-\item ${n}$ (número de puntos de servicio)
-\item ${h_i		\ \ i=1,\ldots,m}$ (demandas, una por línea)
-\item ${d_{i,j}	\ \ i=1,\ldots,m \ \ j=1,\ldots,n}$ (matriz ${m \times n}$ de distancias, en Hectómetros)
-\end{enumerate}
+\storestyleof{itemize}
+\begin{listliketab}
+    \begin{tabular}{Lll}
+\textbullet	& ${m}$							& Número de puntos de demanda	\\
+\textbullet	& ${n}$ 						& Número de puntos de servicio	\\
+\textbullet	& ${h_i		\ \ i=1,\ldots,m}$	& Demandas, una por línea		\\
+\textbullet	& ${d_{i,j}	\ \ i=1,\ldots,m \ \ j=1,\ldots,n}$	& Matriz ${m \times n}$ de distancias (Hectómetros)	\\
+    \end{tabular}
+\end{listliketab}
 
 Una vez cargados los datos, la siguiente parte consiste en obtener la resolución exacta. La solución exacta obtenida con Xpress no tiene mayor dificultad que introducir el modelo anterior, lo único destacable de esta parte fue el tiempo. La solución de Xpress nos dio 0.516 segundos para los datos \texttt{aint1} y 0.838 segundos para \texttt{aint5} después de ejecutarlo con todos los valores de P.\\
 
 En la siguiente parte se hizo la solución greedy. El algoritmo se describe a continuación:
 
 \begin{enumerate}
-\item Buscamos el indice del nodo que cubre la mayor cantidad de demanda y que no esté fijado todavía. Como detalles de implementación cabe destacar que en mi caso, para el este paso simplemente calculaba la suma de toda la demanda que cubre un punto (los puntos que cubre cada nodo de servicio están precalculados en una matriz llamada \texttt{cubrimientos}), y con ello buscaba el máximo, cuyo indice es llamado \texttt{j\_max}. Además en caso de que en un nodo de servicio la suma de demanda que puede cubrir diese 0, lo fijo y añado a la solución con un 0.
+\item Buscamos el indice del nodo que cubre la mayor cantidad de demanda y que no esté fijado todavía. Como detalles de implementación cabe destacar que en mi caso, para este paso simplemente calculaba la suma de toda la demanda que cubre un punto (los puntos que cubre cada nodo de servicio están precalculados en una matriz llamada \texttt{cubrimientos}), y con ello buscaba el máximo, cuyo indice es llamado \texttt{j\_max}. Además en caso de que en un nodo de servicio la suma de demanda que puede cubrir diese 0, lo fijo y añado a la solución con un 0.
 \item Fijamos el nodo anterior y los añadimos a la solución.
 \item Eliminamos la demanda ya cubierta. En mi caso este paso lo hacía simplemente poniendo un 0 en el vector de demandas (llamado ${demandas}$) en todos aquellos nodos de de demanda que se encuentren cubiertos por \texttt{j\_max}.
 \item Si todavía no hemos cubierto toda la demanda y el número de instalaciones es inferior a ${p}$ volvemos al paso 1.

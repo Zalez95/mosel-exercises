@@ -1,5 +1,5 @@
 !@encoding CP1252
-model "p_mediana_exacta"
+model "p_mediana_greedy_100"
 	uses "mmive";	! graficos
 	uses "mmsystem" ! tiempo de ejecucion
 	
@@ -26,8 +26,9 @@ model "p_mediana_exacta"
 	declarations
 		n				: integer;
 		m				: integer;
-		fichero_datos	= "data/coordenadas_15.dat";
-		rango_P			= 1..10;
+		fichero_datos	= "data/coordenadas_100.dat";
+		MAX_P			= 10;
+		RANGO_P			= 1..MAX_P;
 	end-declarations
 	
 	! INICIALIZACION 1
@@ -64,10 +65,13 @@ model "p_mediana_exacta"
 	forall(i in p_demanda, j in p_servicio)
 		d(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));
 	
-	! **** P-MEDIANA GREEDY **** !
+	
+	!==============================================================================
+	! SOLUCION P-MEDIANA GREEDY
+	!==============================================================================
 	t1 := gettime;
 	writeln("Práctica 8 P-mediana greedy (n=", n, ", m=", m, "):");
-	forall(p in rango_P) do
+	forall(p in RANGO_P) do
 		! Distancias iniciales de d_actual
 		forall(i in p_demanda)
 			d_actual(i) := MAX_INT;

@@ -1,0 +1,164 @@
+!@encoding CP1252
+model "p_mediana_greedy_busqueda_local_100"
+	uses "mmive";	! graficos
+	uses "mmsystem" ! tiempo de ejecucion
+	
+	! DEFINICION DE FUNCIONES
+	(!
+		Devuelve el indice del elemento con el mínimo valor dentro del vector dado
+	
+		@param	vector el vector con los elementos a comparar
+		@return	el indice del mínimo elemento en vector
+	!)
+	function getIndiceMinimo(a : array(r : range) of integer) : integer
+		aux := MAX_INT;
+		forall(i in r)
+			if(a(i) < aux) then
+				aux := a(i);
+				ret := i;
+			end-if
+	
+		returned := ret;
+	end-function
+	
+	
+	! DECLARACIONES 1
+	declarations
+		n				: integer;
+		m				: integer;
+		fichero_datos	= "data/coordenadas_100.dat";
+		MAX_P			= 10;
+		RANGO_P			= 1..MAX_P;
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen(fichero_datos, F_INPUT);
+	read(n);
+	m := n;
+	
+	! DECLARACIONES 2
+	declarations
+		p_servicio	= 1..n;
+		p_demanda	= 1..m;
+		
+		coords		: array(p_demanda, 1..2) of integer;
+		
+		h			: array(p_demanda) of integer;
+		d			: array(p_demanda, p_servicio) of integer;
+		
+		solucion	: array(p_servicio) of integer;
+		z			: array(p_servicio) of integer;
+		d_actual	: array(p_demanda) of integer;
+		
+		solucion1	: array(p_servicio) of integer;
+	end-declarations
+	
+	! INICIALIZACION 2
+	forall(i in p_demanda) do
+		indice := 0;
+		read( indice );
+		read( coords(indice,1) );
+		read( coords(indice,2) );
+		read( h(indice) );
+	end-do
+	fclose(F_INPUT);
+	
+	! Calculamos las distancias mediante la distancia euclídea
+	forall(i in p_demanda, j in p_servicio)
+		d(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));	
+	
+	
+	! SOLUCION
+	t1 := gettime;
+	writeln("Práctica 8 P-mediana greedy con búsqueda local (n=", n, ", m=", m, "):");
+	forall(p in RANGO_P) do
+		!==============================================================================
+		! SOLUCION P-MEDIANA GREEDY
+		!==============================================================================
+		! Distancias iniciales de d_actual
+		forall(i in p_demanda)
+			d_actual(i) := MAX_INT;
+			
+		! Valores iniciales de x
+		forall(j in p_servicio)
+			solucion(j) := 0;
+			
+		forall(k in 1..p) do
+			! 1. Calculamos todos los z(j)		
+			forall(j in p_servicio | solucion(j) = 0)
+				z(j) := sum(i in p_demanda) h(i) * minlist(d_actual(i), d(i,j));
+			
+			! 2. Obtenemos el indice del minimo de los z(j)
+			j_min := getIndiceMinimo(z);
+			
+			! 3. fijamos j_min en el vector x
+			solucion(j_min) := 1;
+			
+			! 4. Actualizamos d_actual
+			forall(i in p_demanda)
+				d_actual(i) := minlist(d_actual(i), d(i,j_min));
+		end-do
+		distancia_total := sum(i in p_demanda) h(i) * d_actual(i);
+		
+		
+		!==============================================================================
+		! SOLUCION BÚSQUEDA LOCAL
+		!==============================================================================
+		flag := 0;
+		while(flag = 0) do
+			mejora := 0;
+			j_intercambio := -1; k_intercambio := -1;
+			forall( j in p_servicio, k in p_servicio |
+					solucion(j) = 1 and solucion(k) = 0 ) do
+			
+				solucion1 := solucion;
+				solucion1(j) := 0;
+				solucion1(k) := 1;
+				
+				distancia_total1	:= sum(i in p_demanda) h(i) * min(j1 in p_servicio | solucion1(j1) = 1) d(i,j1);
+				if (distancia_total - distancia_total1 > mejora) then
+					mejora := distancia_total - distancia_total1;
+					j_intercambio := j;
+					k_intercambio := k;
+				end-if
+			end-do
+			
+			if(mejora = 0) then
+				flag := 1;
+			else
+				distancia_total -= mejora;
+				solucion(j_intercambio) := 0;
+				solucion(k_intercambio) := 1;
+			end-if
+		end-do
+		
+		! SALIDA
+		write("P = ", p, "\tDistancia total: ", distancia_total, "\n");
+		write("\tSolucion: ");
+		forall(j in p_servicio)
+			write(" ", solucion(j));
+		writeln("\n");
+		
+		! Dibujamos las flechas al gráfico
+		plot := IVEaddplot("P = "+p, IVE_BLUE);
+		forall(i in p_demanda) do
+			j_min := -1;
+			aux := MAX_INT;
+			forall(j in p_servicio | solucion(j) = 1)
+				if(d(i,j) < aux) then
+					aux := d(i,j);
+					j_min := j;
+				end-if
+			IVEdrawarrow(plot, coords(i,1), coords(i,2), coords(j_min,1), coords(j_min,2));
+		end-do
+	end-do
+		
+	! Añadimos las etiquetas al gráfico
+	plot := IVEaddplot("labels", IVE_BLACK);
+	forall(i in p_demanda)
+		IVEdrawlabel(plot, coords(i,1), coords(i,2), ""+i);
+	
+	! Tiempo de ejecución
+	t2 := gettime;
+	writeln("Tiempo total de ejecución: ", t2 - t1, "\n");
+end-model
