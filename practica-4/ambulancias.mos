@@ -1,50 +1,49 @@
 !@encoding CP1252
 model "ambulancias"
-uses "mmxprs";
-
-! DECLARACIONES
-declarations
-	n			= 20;
-	m			= 10;
-	p_demanda	= 1..n;
-	p_servicio	= 1..m;
+	uses "mmxprs";
 	
-	a			: array(p_demanda, p_servicio) of integer;
-	h			: array(p_demanda) of real;
+	! DECLARACIONES
+	declarations
+		n			= 20;
+		m			= 10;
+		p_demanda	= 1..n;
+		p_servicio	= 1..m;
+		
+		a			: array(p_demanda, p_servicio) of integer;
+		h			: array(p_demanda) of real;
+		
+		x			: array(p_servicio)	of mpvar;
+		z			: array(p_demanda)	of mpvar;
+	end-declarations
+		
+	! DATOS
+	initializations from "data/ambulancias.dat"
+		a;
+		h;
+	end-initializations
 	
-	x			: array(p_servicio)	of mpvar;
-	z			: array(p_demanda)	of mpvar;
-end-declarations
+	! MODELO
+	forall(i in p_demanda)
+		cubrimiento(i) := sum(j in p_servicio) a(i,j)*x(j) >= z(i);
+	forall(j in p_servicio)	x(j) is_binary;
+	forall(i in p_demanda)	z(i) is_binary;
 	
-! DATOS
-initializations from "data/ambulancias.dat"
-	a;
-	h;
-end-initializations
-
-! MODELO
-forall(i in p_demanda)
-	cubrimiento(i) := sum(j in p_servicio) a(i,j)*x(j) >= z(i);
-forall(j in p_servicio)	x(j) is_binary;
-forall(i in p_demanda)	z(i) is_binary;
-
-dem_cub := sum(i in p_demanda) h(i)*z(i);
-
-writeln("Problema de cubrimiento de ambulancias (n = ", n, ", m = ", m, "):");
-writeln("Demanda máxima: ", max(i in p_demanda) h(i), "\n");
-forall(P in 1..10) do
-	rest := sum(j in p_servicio) x(j) = P;
-	maximize(dem_cub);
+	dem_cub := sum(i in p_demanda) h(i)*z(i);
 	
-	! SALIDA
-	writeln("P = ", P, ",\tPorcentaje cubierto: ", 100 * getobjval / sum(i in p_demanda) h(i), "%");
-	write("\tPuntos instalados:");
-	forall(j in p_servicio | x(j).sol = 1)
-		write(" ", j);
-	write("\n\tPuntos cubiertos:");
-	forall(i in p_demanda | z(i).sol = 1)
-		write(" ", i);
-	write("\n");
-end-do
-
+	writeln("Problema de cubrimiento de ambulancias (n = ", n, ", m = ", m, "):");
+	writeln("Demanda máxima: ", max(i in p_demanda) h(i), "\n");
+	forall(P in 1..10) do
+		rest := sum(j in p_servicio) x(j) = P;
+		maximize(dem_cub);
+		
+		! SALIDA
+		writeln("P = ", P, ",\tPorcentaje cubierto: ", 100 * getobjval / sum(i in p_demanda) h(i), "%");
+		write("\tPuntos instalados:");
+		forall(j in p_servicio | x(j).sol = 1)
+			write(" ", j);
+		write("\n\tPuntos cubiertos:");
+		forall(i in p_demanda | z(i).sol = 1)
+			write(" ", i);
+		write("\n");
+	end-do	
 end-model

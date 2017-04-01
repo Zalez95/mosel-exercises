@@ -1,16 +1,17 @@
 !@encoding CP1252
-model "5_3"
+model "p_mediana_exacta_15"
 	uses "mmxprs";
 	uses "mmive";
 	
 	! DECLARACIONES 1
 	declarations
-		n : integer;
-		m : integer;
+		n				: integer;
+		m				: integer;
+		archivo_datos	= "coordenadas_15.dat";
 	end-declarations
 	
 	! INICIALIZACION 1
-	fopen("data/coordenadas_15.dat", F_INPUT);
+	fopen(archivo_datos, F_INPUT);
 	read(n);
 	m := n;
 	
@@ -21,7 +22,7 @@ model "5_3"
 		
 		coords		: array(p_demanda, 1..2) of integer;
 		
-		d			: array(p_demanda, p_servicio) of real;
+		d			: array(p_demanda, p_servicio) of integer;
 		h			: array(p_demanda) of integer;
 		
 		y			: array(p_demanda, p_servicio) of mpvar;
@@ -39,10 +40,14 @@ model "5_3"
 	fclose(F_INPUT);
 	
 	! Calculamos las distancias mediante la distancia euclídea
-	forall(i in p_demanda, j in p_servicio)
-		d(i,j) := sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 );
+	forall(i in p_demanda)
+		forall(j in p_servicio)
+			d(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));
 	
+	
+	!==============================================================================
 	! MODELO
+	!==============================================================================
 	! Variables binarias para x e y
 	forall(j in p_servicio)
 		x(j) is_binary;
@@ -59,16 +64,14 @@ model "5_3"
 	! Valor a minimizar
 	z := sum(i in p_demanda, j in p_servicio) h(i) * d(i,j) * y(i,j);
 	
-	writeln("Práctica 5.3 P-mediana (n=", n, ", m=", m, "):");
-	forall(P in 1..5) do
+	writeln("Práctica 8 P-mediana exacta (n=", n, ", m=", m, "):");
+	forall(P in 1..10) do
 		! Numero de instalaciones
 		num_instalaciones := sum(j in p_servicio) x(j) = P;
 		minimize(z);
-	
+		
 		! SALIDA
 		writeln("P = ", P, "\tz = ", getobjval);
-		writeln("\tDistancia promedio = ", getobjval / sum(i in p_demanda) h(i));
-		writeln("\tDistancia máxima = ", max(i in p_demanda, j in p_servicio | y(i,j).sol = 1) d(i,j));
 		! Dibujamos las flechas al gráfico
 		plot := IVEaddplot("P = "+P, IVE_BLUE);
 		forall(i in p_demanda, j in p_servicio | y(i,j).sol = 1)
@@ -78,5 +81,5 @@ model "5_3"
 	! Añadimos las etiquetas al gráfico
 	plot := IVEaddplot("labels", IVE_BLACK);
 	forall(i in p_demanda)
-		IVEdrawlabel(plot, coords(i,1), coords(i,2), ""+i);	
+		IVEdrawlabel(plot, coords(i,1), coords(i,2), ""+i);
 end-model

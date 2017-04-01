@@ -1,0 +1,216 @@
+model "set_covering_6_2_aint5"
+	uses "mmxprs"
+	uses "mmsystem"
+
+	! DECLARACIONES 1	
+	declarations
+		m, n				: integer  
+		archivo_datos		= "data/aint5.dat"
+		K					= 5;
+		N					= 100;
+		RANGO_K				= 1..K;
+		RANGO_N				= 1..N;
+		MIN_DC				= 250;
+		MAX_DC				= 400;
+		RANGO_DC			= MIN_DC..MAX_DC;
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen(archivo_datos, F_INPUT);
+	readln(m);
+	readln(n);
+	
+	! DECLARACIONES 2
+	declarations
+		p_demanda			= 1..m;
+		p_servicio			= 1..n;
+		
+		distancias			: array(p_demanda,p_servicio) of integer;
+		a					: array(p_demanda,p_servicio) of integer;
+		c					: array(p_servicio) of integer;
+		x					: array(p_servicio) of mpvar;
+		
+		aux					: real;
+		solucion			: array(p_servicio) of integer;
+		fijadas				: array(p_servicio) of integer;
+		cubiertas			: array(p_demanda) of integer;
+		d					: array(p_servicio) of integer;
+		
+		lista_rcl			: array(RANGO_K) of integer;
+		marcadas			: array(p_servicio) of integer;
+		w					: array(p_demanda) of integer;
+	end-declarations
+	
+	! INICIALIZACION 2	
+	forall(j in p_servicio)
+		read(c(j));
+	forall(i in p_demanda, j in p_servicio)
+		read( distancias(i,j) );	
+	fclose(F_INPUT);
+	
+	
+	! SOLUCION
+	t1 := gettime;
+	write("\nEjercicio 6.2 con el fichero de datos \"", archivo_datos, "\"");
+	writeln(" (m = ", m, ", n = ", n, "):\n");
+	writeln("dc; Solucion Xpress; Solucion Greedy; Solucion Greedy Aleatorizada");
+	forall(dc in RANGO_DC) do
+		! Inicializacion de la matriz a
+		forall(i in p_demanda, j in p_servicio) do
+			if(distancias(i,j) <= dc) then
+		  		a(i,j) := 1;
+			else
+		  		a(i,j) := 0;
+			end-if
+		end-do
+		
+		
+		!==============================================================================
+		! SOLUCION SET COVERING CON XPRESS
+		!==============================================================================
+		forall(j in p_servicio)
+			x(j) is_binary;
+		
+		forall(i in p_demanda)
+			res_cub(i) := sum(j in p_servicio) a(i,j) * x(j) >= 1;
+			
+		obj := sum(j in p_servicio) c(j) * x(j);
+		minimize(obj)
+
+		! SALIDA
+		write(dc, "; ", getobjval);
+		
+		
+		!==============================================================================
+		! SOLUCION SET COVERING GREEDY
+		!==============================================================================
+		! Inicializacion de los datos necesarios
+		forall(j in p_servicio) do
+			fijadas(j)	:= 0;
+			solucion(j)	:= 0;
+		end-do
+		forall(i in p_demanda) do
+			cubiertas(i) := 0;
+		end-do
+		num_filas_cubiertas := 0;
+	
+		while(num_filas_cubiertas < m) do
+			! Calculo de d(j) - número de filas que cubre la columna j
+			forall(j in p_servicio | fijadas(j) = 0) do
+				d(j) := sum(i in p_demanda | a(i,j) = 1 and cubiertas(i) = 0) 1;
+				
+				if(d(j) = 0) then
+					fijadas(j)	:= 1;
+					solucion(j)	:= 0;
+				end-if
+			end-do
+			
+			! Buscamos el elemento que minimice el criterio greedy
+			j_min	:= -1;
+			aux		:= MAX_INT;
+			forall(j in p_servicio | fijadas(j) = 0) do
+				if(1/d(j) < aux) then
+					aux		:= 1/d(j);
+					j_min	:= j;
+				end-if
+			end-do
+			
+			! Añadimos min_j a la solucion y lo fijamos
+			fijadas(j_min)	:= 1;
+			solucion(j_min) := 1;
+			
+			! Marcamos como cubiertas las filas que cubre min_j
+			forall(i in p_demanda | a(i, j_min) = 1 and cubiertas(i) = 0) do
+				cubiertas(i) := 1;
+				num_filas_cubiertas += 1;
+			end-do
+		end-do
+
+		! SALIDA
+		write("; ", sum(j in p_servicio) c(j) * solucion(j));
+		
+		!==============================================================================
+		! SOLUCION SET COVERING GREEDY ALEATORIZADA
+		!==============================================================================
+		z_mejor := MAX_INT;
+		forall(t in RANGO_N) do
+			! Inicializacion de los datos necesarios
+			forall(j in p_servicio) do
+				fijadas(j)	:= 0;
+				solucion(j)	:= 0;
+			end-do
+			forall(i in p_demanda) do
+				cubiertas(i) := 0;
+			end-do
+			num_filas_cubiertas := 0;
+		
+			while(num_filas_cubiertas < m) do
+				! Calculo de d(j) - número de filas que cubre la columna j
+				forall(j in p_servicio | fijadas(j) = 0) do
+					d(j) := sum(i in p_demanda | a(i,j) = 1 and cubiertas(i) = 0) 1;
+					
+					if(d(j) = 0) then
+						fijadas(j)	:= 1;
+						solucion(j)	:= 0;
+					end-if
+				end-do
+				
+				! Creamos la lista RCL
+				forall(j in p_servicio) marcadas(j) := 0;
+				forall(r in RANGO_K) do
+					aux := MAX_INT;
+					forall(j in p_servicio | fijadas(j) = 0 and marcadas(j) = 0) do
+						if(c(j)/d(j) < aux) then
+							aux		:= c(j)/d(j);
+							j_min	:= j;
+						end-if
+					end-do
+					marcadas(j_min)	:= 1;
+					lista_rcl(r)	:= j_min;
+				end-do
+				
+				! Escogemos un elemento aleatorio de la lista RCL
+				j_rcl := lista_rcl( ceil(random * K) );
+				
+				! Añadimos j_rcl a la solucion y lo fijamos
+				fijadas(j_rcl)	:= 1;
+				solucion(j_rcl) := 1;
+				
+				! Marcamos como cubiertas las filas que cubre j_rcl
+				forall(i in p_demanda | a(i, j_rcl) = 1 and cubiertas(i) = 0) do
+					cubiertas(i) := 1;
+					num_filas_cubiertas += 1;
+				end-do
+			end-do
+		
+			! Eliminación de columnas redundantes
+			forall(i in p_demanda) do
+				w(i) := sum(j in p_servicio | solucion(j) = 1 and a(i,j) = 1) 1;
+			end-do
+		
+			forall(k in p_servicio | solucion(k) = 1) do
+				eliminar := 1
+				forall(i in p_demanda | w(i) < 1 + a(i,k)) do
+					eliminar := 0;
+			    end-do
+				if(eliminar = 1) then
+					solucion(k) := 0;
+					forall(i in p_demanda) do
+						w(i) := w(i) - a(i,k);
+					end-do
+				end-if
+			end-do
+			
+			z2 := sum(j in p_servicio) c(j) * solucion(j);
+			if(z2 < z_mejor) then
+				z_mejor := z2;
+			end-if
+		end-do
+		
+		! SALIDA
+		writeln("; ", z_mejor);
+	end-do
+	t2 := gettime;
+	
+	writeln("Tiempo total = ", t2 - t1, " segundos");
+end-model
