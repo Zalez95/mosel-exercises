@@ -1,0 +1,124 @@
+model "set_covering_6_1"
+	uses "mmxprs"
+	uses "mmsystem"
+
+	! DECLARACIONES 1	
+	declarations
+		m, n				: integer  
+		archivo_datos		= "data/matriz30x30.dat"
+		MIN_DC				= 70;
+		MAX_DC				= 120;
+		RANGO_DC			= MIN_DC..MAX_DC;
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen(archivo_datos, F_INPUT);
+	readln(m);
+	readln(n);
+	
+	! DECLARACIONES 2
+	declarations
+		p_demanda			= 1..m;
+		p_servicio			= 1..n;
+		
+		distancias			: array(p_demanda,p_servicio) of integer;
+		a					: array(p_demanda,p_servicio) of integer;
+		
+		x					: array(p_servicio) of mpvar;
+		
+		aux					: real;
+		solucion			: array(p_servicio) of integer;
+		fijadas				: array(p_servicio) of integer;
+		cubiertas			: array(p_demanda) of integer;
+		d					: array(p_servicio) of integer;
+	end-declarations
+	
+	! INICIALIZACION 2	
+	forall(i in p_demanda, j in p_servicio)
+		read( distancias(i,j) );	
+	fclose(F_INPUT);
+	
+	
+	! SOLUCION
+	t1 := gettime;
+	writeln("\nEjercicio 6.1 de condados de NY (m = ", m, ", n = ", n, "):");
+	writeln("dc; Solucion Xpress; Solucion Greedy");
+	forall(dc in RANGO_DC) do
+		! Inicializacion de la matriz a_(i,j)
+		forall(i in p_demanda, j in p_servicio) do
+			if(distancias(i,j) <= dc) then
+		  		a(i,j) := 1;
+			else
+		  		a(i,j) := 0;
+			end-if
+		end-do
+	
+	
+		!==============================================================================
+		! SOLUCION SET COVERING CON XPRESS
+		!==============================================================================
+		forall(j in p_servicio)
+			x(j) is_binary;
+		
+		forall(i in p_demanda)
+			res_cub(i) := sum(j in p_servicio) a(i,j) * x(j) >= 1;
+			
+		obj := sum(j in p_servicio) x(j);
+		minimize(obj)
+
+		! SALIDA
+		write(dc, "; ", getobjval);
+		
+		
+		!==============================================================================
+		! SOLUCION SET COVERING GREEDY
+		!==============================================================================
+		! Inicializacion de los datos necesarios
+		forall(j in p_servicio) do
+			fijadas(j)	:= 0;
+			solucion(j)	:= 0;
+		end-do
+		forall(i in p_demanda) do
+			cubiertas(i) := 0;
+		end-do
+		num_filas_cubiertas := 0;
+	
+		while(num_filas_cubiertas < m) do
+			! Calculo de d(j) - número de filas que cubre la columna j
+			forall(j in p_servicio | fijadas(j) = 0) do
+				d(j) := sum(i in p_demanda | a(i,j) = 1 and cubiertas(i) = 0) 1;
+				
+				if(d(j) = 0) then
+					fijadas(j)	:= 1;
+					solucion(j)	:= 0;
+				end-if
+			end-do
+			
+			! Buscamos el elemento que minimice el criterio greedy
+			j_min	:= -1;
+			aux		:= MAX_INT;
+			forall(j in p_servicio | fijadas(j) = 0) do
+				if(1/d(j) < aux) then
+					aux		:= 1/d(j);
+					j_min	:= j;
+				end-if
+			end-do
+			
+			! Añadimos min_j a la solucion y lo fijamos
+			fijadas(j_min)	:= 1;
+			solucion(j_min) := 1;
+			
+			! Marcamos como cubiertas las filas que cubre min_j
+			forall(i in p_demanda | a(i, j_min) = 1 and cubiertas(i) = 0) do
+				cubiertas(i) := 1;
+				num_filas_cubiertas += 1;
+			end-do
+		end-do
+		
+		! SALIDA
+		writeln("; ", sum(j in p_servicio) solucion(j));
+	end-do
+	t2 := gettime;
+	
+	writeln("Tiempo total = ", t2 - t1, " segundos");
+end-model

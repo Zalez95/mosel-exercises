@@ -5,12 +5,13 @@ model "p_mediana_exacta_100"
 	
 	! DECLARACIONES 1
 	declarations
-		n : integer;
-		m : integer;
+		n				: integer;
+		m				: integer;
+		archivo_datos	= "coordenadas_100.dat";
 	end-declarations
 	
 	! INICIALIZACION 1
-	fopen("coordenadas_100.dat", F_INPUT);
+	fopen(archivo_datos, F_INPUT);
 	read(n);
 	m := n;
 	

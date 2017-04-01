@@ -26,13 +26,13 @@ model "p_mediana_greedy_busqueda_local_30"
 	declarations
 		n				: integer;
 		m				: integer;
-		fichero_datos	= "data/coordenadas_30.dat";
+		archivo_datos	= "data/coordenadas_30.dat";
 		MAX_P			= 10;
 		RANGO_P			= 1..MAX_P;
 	end-declarations
 	
 	! INICIALIZACION 1
-	fopen(fichero_datos, F_INPUT);
+	fopen(archivo_datos, F_INPUT);
 	read(n);
 	m := n;
 	
