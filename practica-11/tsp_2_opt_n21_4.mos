@@ -1,0 +1,127 @@
+!@encoding CP1252
+model "tsp_2_opt_n21_4"
+	! DECLARACIONES 1
+	declarations
+		n : integer;
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen("data/n21_4.dat", F_INPUT);
+	read(n);
+	
+	! DECLARACIONES 2
+	declarations
+		p_nodos		= 1..n;
+		
+		distancias	: array(p_nodos, p_nodos) of integer;
+		visitados	: array(p_nodos) of integer;
+		siguientes	: array(p_nodos) of integer;
+		siguientes2	: array(p_nodos) of integer;
+	end-declarations
+	
+	! INICIALIZACION 2
+	forall(i in p_nodos, j in p_nodos)
+		read(distancias(i,j));
+	fclose(F_INPUT);
+	
+	
+	!==============================================================================
+	! SOLUCION TSP GREEDY
+	!==============================================================================
+	nodo_inicial	:= ceil(n * random);
+	nodo_anterior	:= nodo_inicial;
+	visitados(nodo_inicial) := 1;
+	num_nodos := 1;
+	
+	distancia_total := 0;
+	while (num_nodos < n) do
+		! Buscamos el i más cercano
+		aux := MAX_INT;
+		forall(i in p_nodos | visitados(i) <> 1) do
+			if(distancias(nodo_anterior, i) < aux) then
+				aux := distancias(nodo_anterior, i);
+				i_cercano := i;
+			end-if
+		end-do
+		
+		! Introducimos el i aleatorio en la solucion
+		siguientes(nodo_anterior) := i_cercano;
+		visitados(i_cercano) := 1;
+		distancia_total += distancias(nodo_anterior, i_cercano);
+		num_nodos += 1;
+		
+		nodo_anterior := i_cercano;
+	end-do
+	
+	! Añadimos la conexión entre el último nodo y el primero
+	siguientes(nodo_anterior) := nodo_inicial;
+	distancia_total += distancias(nodo_anterior, nodo_inicial);
+	
+	
+	!==============================================================================
+	! MEJORA 2-OPT
+	!==============================================================================
+	flag1 := 0;
+	while(flag1 = 0) do
+		mejora_max := 0;
+		i_intercambio := -1; j_intercambio := -1; 
+		
+		forall(	i in p_nodos, j in p_nodos |
+				i <> j and siguientes(i) <> j and siguientes(j) <> i ) do
+			! Calculamos la mejora del intercambio
+			s_i := siguientes(i);
+			s_j := siguientes(j);
+			delta_ij := distancias(i,s_i) + distancias(j,s_j) -
+						distancias(i,j) - distancias(s_i,s_j);
+						
+			if(delta_ij > mejora_max) then
+				mejora_max := delta_ij;
+				i_intercambio := i;
+				j_intercambio := j;
+			end-if
+		end-do
+		
+		if(mejora_max = 0) then
+			! Salimos del bucle sin hacer el intercambio
+			flag1 := 1;
+		else
+			! Realizamos el intercambio
+			siguientes2 := siguientes;
+						
+			siguientes(i_intercambio) := j_intercambio;
+			siguientes(siguientes2(i_intercambio)) := siguientes2(j_intercambio);
+			
+			flag	:= 0;
+			actual	:= siguientes2(i_intercambio);
+			while(flag = 0) do
+				if (actual = j_intercambio) then
+					flag := 1;
+				else
+					siguiente := siguientes2(actual);
+					siguientes(siguiente) := actual;
+					actual := siguiente;
+				end-if
+			end-do
+			
+			! Actualizamos la distancia total
+			distancia_total -= mejora_max;
+		end-if
+	end-do
+	
+	
+	! SALIDA
+	writeln("Problema TSP (n = ", n, ")");
+	writeln("Distancia Total: ", distancia_total);
+		
+	write("\nConexiones:");
+	aux := 1;
+	flag := 0;
+	while(flag = 0) do
+		if(siguientes(aux) = 1) then
+			flag := 1;
+		else
+			write(" -> ", siguientes(aux));
+			aux := siguientes(aux);
+		end-if
+	end-do
+end-model

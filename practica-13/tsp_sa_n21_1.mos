@@ -1,0 +1,188 @@
+!@encoding CP1252
+model "tsp_sa_n21_1"
+	! DECLARACIONES 1
+	declarations
+		n				: integer;
+		ALPHA			= 0.961;
+		T_INICIAL		= 10000.0;
+		MAX_K			= 580000;
+		MAX_ITER		= 950000000;
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen("data/n21_1.dat", F_INPUT);
+	read(n);
+	
+	! DECLARACIONES 2
+	declarations
+		p_nodos			= 1..n;
+		
+		distancias		: array(p_nodos, p_nodos) of integer;
+		visitados		: array(p_nodos) of integer;
+		siguientes		: array(p_nodos) of integer;
+		
+		siguientes_x	: array(p_nodos) of integer;
+		siguientes_x_n	: array(p_nodos) of integer;
+	end-declarations
+	
+	! INICIALIZACION 2
+	forall(i in p_nodos, j in p_nodos)
+		read(distancias(i,j));
+	fclose(F_INPUT);
+
+	writeln("TSP SIMULATED ANNEALING (n = ", n, "):")	
+	
+	!==============================================================================
+	! SOLUCION TSP GREEDY
+	!==============================================================================
+	! Inicializacion
+	forall(i in p_nodos) do
+		visitados(i) := 0;
+	end-do
+	
+	nodo_inicial	:= ceil(n * random);
+	nodo_anterior	:= nodo_inicial;
+	visitados(nodo_inicial) := 1;
+	num_nodos := 1;
+	
+	distancia_total := 0;
+	while (num_nodos < n) do
+		! Buscamos el i más cercano
+		aux := MAX_INT;
+		forall(i in p_nodos | visitados(i) <> 1) do
+			if(distancias(nodo_anterior, i) < aux) then
+				aux := distancias(nodo_anterior, i);
+				i_cercano := i;
+			end-if
+		end-do
+		
+		! Introducimos el i mas cercano en la solucion
+		siguientes(nodo_anterior) := i_cercano;
+		visitados(i_cercano) := 1;
+		distancia_total += distancias(nodo_anterior, i_cercano);
+		num_nodos += 1;
+		
+		nodo_anterior := i_cercano;
+	end-do
+	
+	! Añadimos la conexión entre el último nodo y el primero
+	siguientes(nodo_anterior) := nodo_inicial;
+	distancia_total += distancias(nodo_anterior, nodo_inicial);	
+	
+	! SALIDA
+	writeln("Distancia Total Greedy: ", distancia_total);
+	write("Conexiones:");
+	nodo_inicial	:= ceil(n * random);
+	nodo_actual		:= nodo_inicial;
+	flag := 0;
+	while(flag = 0) do
+		if(siguientes(nodo_actual) = nodo_inicial) then
+			flag := 1;
+		else
+			write(" -> ", siguientes(nodo_actual));
+			nodo_actual := siguientes(nodo_actual);
+		end-if
+	end-do
+	writeln("\n");
+	
+	!==============================================================================
+	! ALGORITMO SIMULATED ANNEALING
+	!==============================================================================
+	siguientes_x_n		:= siguientes;
+	distancia_total_x_n	:= distancia_total;
+	t_n					:= T_INICIAL;
+	iter				:= 0;
+	iter_sin_mejora		:= 0;
+	
+	flag := 0;
+	while(flag = 0) do
+		! Generamos una solución aleatoria en el entorno de la solución actual x_n
+		i := -1;
+		j := -1;
+		flag2 := 0;
+		while(flag2 = 0) do
+			i := ceil(n * random);
+			j := ceil(n * random);
+			if( i <> j and j <> siguientes_x_n(i) ) then
+				flag2 := 1;
+			end-if
+		end-do
+		
+		! Calculamos la mejora de la solucion x respecto a la solucion x_n
+		s_i	:= siguientes_x_n(i);
+		s_j	:= siguientes_x_n(j);
+		delta_ij_x := distancias(i,s_i) + distancias(j,s_j) - distancias(i,j) - distancias(s_i,s_j);
+		
+		! Calculamos el vector siguientes de la solucion x a partir de x_n
+		siguientes_x		:= siguientes_x_n;
+		siguientes_x(i)		:= j;
+		siguientes_x(s_i)	:= siguientes_x_n(j);
+		
+		actual				:= siguientes_x_n(i);
+		flag2				:= 0;
+		while(flag2 = 0) do
+			if (actual = j) then
+				flag2 := 1;
+			else
+				siguiente := siguientes_x_n(actual);
+				siguientes_x(siguiente) := actual;
+				actual := siguiente;
+			end-if
+		end-do
+		
+		! Calculamos la distancia total de la solucion x
+		distancia_total_x := distancia_total_x_n - delta_ij_x;
+
+		if (distancia_total_x <= distancia_total_x_n) then
+			! Sustituimos la solucion x_n por x
+			siguientes_x_n			:= siguientes_x;
+			distancia_total_x_n		:= distancia_total_x;
+		end-if
+		
+		if (distancia_total_x < distancia_total) then
+			! Sustituimos la solucion optima por x
+			siguientes				:= siguientes_x;
+			distancia_total			:= distancia_total_x;
+			
+			iter_sin_mejora := 0;
+		else
+			! La solucion x pasa a ser la solucion x_n con probabilidad p_n
+			p_n := exp(- delta_ij_x / t_n);		! Calculamos el p_n actual (distribucion de Boltzamann)
+			p	:= random;						! Generamos un numero aleatorio en el intervalo [0,1)
+			if (p <= p_n) then
+				! Sustituimos la solucion x_n por x
+				siguientes_x_n		:= siguientes_x;
+				distancia_total_x_n	:= distancia_total_x;	
+			end-if
+			
+			iter_sin_mejora += 1;
+		end-if
+		
+		! Disminuimos la temperatura de enfriamiento (Esquema geométrico)
+		t_n := ALPHA * t_n;
+		
+		! Comprobamos si se satisface el criterio de parada
+		if (iter = MAX_ITER or iter_sin_mejora = MAX_K) then
+			flag := 1;
+		end-if
+			
+		iter += 1;
+	end-do
+	
+	! SALIDA
+	writeln("Distancia Total Simulated Annealing: ", distancia_total);
+	write("Conexiones:");
+	nodo_inicial	:= ceil(n * random);
+	nodo_actual		:= nodo_inicial;
+	flag := 0;
+	while(flag = 0) do
+		if(siguientes(nodo_actual) = nodo_inicial) then
+			flag := 1;
+		else
+			write(" -> ", siguientes(nodo_actual));
+			nodo_actual := siguientes(nodo_actual);
+		end-if
+	end-do
+	writeln("");
+	
+end-model

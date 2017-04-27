@@ -7,7 +7,7 @@ model "p_mediana_exacta_15"
 	declarations
 		n				: integer;
 		m				: integer;
-		archivo_datos	= "coordenadas_15.dat";
+		archivo_datos	= "data/coordenadas_15.dat";
 	end-declarations
 	
 	! INICIALIZACION 1

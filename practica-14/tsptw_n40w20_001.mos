@@ -1,0 +1,71 @@
+!@encoding CP1252
+model "tsptw-n40w20_001"
+	uses "mmxprs";
+	
+	! DECLARACIONES 1
+	declarations
+		n				: integer;
+		archivo_datos	= "data/n40w20.001.dat";
+		M				= MAX_INT;
+	end-declarations
+	
+	! INICIALIZACION 1
+	initializations from archivo_datos
+		n;
+	end-initializations
+	
+	! DECLARACIONES 2
+	declarations
+		p_nodos	= 1..n;
+		
+		d		: array(p_nodos, p_nodos) of integer;
+		a		: array(p_nodos) of integer;
+		b		: array(p_nodos) of integer;
+		
+		x		: array(p_nodos, p_nodos) of mpvar;
+		beta	: array(p_nodos) of mpvar;
+	end-declarations
+	
+	! INICIALIZACION 2
+	initializations from archivo_datos
+		d;
+		a;
+		b;
+	end-initializations
+	
+	
+	!==============================================================================
+	! MODELO
+	!==============================================================================
+	! Variables binarias para x
+	forall(i in p_nodos, j in p_nodos)
+		x(i,j) is_binary;
+	
+	! Nos aseguramos de que los clientes sean visitados al menos una vez
+	forall(j in p_nodos)
+		unavez1(j) := sum(i in p_nodos | i <> j) x(i,j) = 1;
+		
+	forall(i in p_nodos)
+		unavez2(i) := sum(j in p_nodos | j <> 1) x(i,j) = 1;
+		
+	! Nos aseguramos de que el tiempo de llegada a un nodo no sea menor que el
+	! tiempo de salida del nodo inmediatamente anterior
+	forall(i in p_nodos, j in p_nodos)
+		t_llegada(i,j) := beta(j) >= beta(i) + d(i,j) - M * (1 - x(i,j));
+	
+	! Nos aseguramos de que se cumplan las ventanas de tiempo
+	forall(i in p_nodos) do
+		v_tiempo_a(i) := a(i) >= beta(i);
+		v_tiempo_b(i) := beta(i) <= b(i);
+	end-do
+	
+	! Valor a minimizar
+	z := sum(i in p_nodos, j in p_nodos) d(i,j) * x(i,j);
+	minimize(z);
+	
+	! SALIDA
+	writeln("Práctica 14 TSPTW exacta (n = ", n, "):");
+	writeln("\tz = ", getobjval);
+	forall(i in p_nodos, j in p_nodos | x(i,j).sol = 1)
+		writeln("(", i, "," , j , ")");
+end-model
