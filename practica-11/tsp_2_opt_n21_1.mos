@@ -87,20 +87,15 @@ model "tsp_2_opt_n21_1"
 		else
 			! Realizamos el intercambio
 			siguientes2 := siguientes;
-						
+
 			siguientes(i_intercambio) := j_intercambio;
 			siguientes(siguientes2(i_intercambio)) := siguientes2(j_intercambio);
-			
-			flag	:= 0;
-			actual	:= siguientes2(i_intercambio);
-			while(flag = 0) do
-				if (actual = j_intercambio) then
-					flag := 1;
-				else
-					siguiente := siguientes2(actual);
-					siguientes(siguiente) := actual;
-					actual := siguiente;
-				end-if
+
+			actual := siguientes2(i_intercambio);
+			while(actual <> j_intercambio) do
+				siguiente := siguientes2(actual);
+				siguientes(siguiente) := actual;
+				actual := siguiente;
 			end-do
 			
 			! Actualizamos la distancia total
@@ -110,18 +105,14 @@ model "tsp_2_opt_n21_1"
 	
 	
 	! SALIDA
+	actual := 1;
 	writeln("Problema TSP (n = ", n, ")");
 	writeln("Distancia Total: ", distancia_total);
-		
-	write("\nConexiones:");
-	aux := 1;
-	flag := 0;
-	while(flag = 0) do
-		if(siguientes(aux) = 1) then
-			flag := 1;
-		else
-			write(" -> ", siguientes(aux));
-			aux := siguientes(aux);
-		end-if
+	write("Conexiones: ", actual);
+
+	while(siguientes(actual) <> 1) do
+		siguiente := siguientes(actual);
+		write(" -> ", siguiente);
+		actual := siguiente;
 	end-do
 end-model

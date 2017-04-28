@@ -1,5 +1,7 @@
 !@encoding CP1252
 model "tsp_grasp_tsp_100_2"
+	uses "mmive";
+
 	! DECLARACIONES 1
 	declarations
 		archivo_datos	= "data/tsp_100_2.txt"
@@ -7,27 +9,27 @@ model "tsp_grasp_tsp_100_2"
 		MAX_K			= 5;
 		n				: integer;
 	end-declarations
-	
+
 	! INICIALIZACION 1
 	fopen(archivo_datos, F_INPUT);
 	read(n);
-	
+
 	! DECLARACIONES 2
 	declarations
 		p_nodos	= 1..n;
-		
+
 		coords		: array(p_nodos, 1..3) of real;
-		
+
 		distancias	: array(p_nodos, p_nodos) of integer;
 		visitados	: array(p_nodos) of integer;
 		siguientes	: array(p_nodos) of integer;
 		siguientes2	: array(p_nodos) of integer;
 		siguientes3	: array(p_nodos) of integer;
-		
+
 		lista_rcl	: array(1..MAX_K) of integer;
 		marcados	: array(p_nodos) of integer;
 	end-declarations
-	
+
 	! INICIALIZACION 2
 	forall(i in p_nodos) do
 		read(coords(i,1));
@@ -35,7 +37,7 @@ model "tsp_grasp_tsp_100_2"
 		read(coords(i,3));
 	end-do
 	fclose(F_INPUT);
-		
+
 	! Calculamos las distancias mediante las coordenadas leidas
 	forall(i in p_nodos, j in p_nodos)
 		if (i <> j) then
@@ -43,12 +45,12 @@ model "tsp_grasp_tsp_100_2"
 		else
 			distancias(i,j) := MAX_INT;
 		end-if
-	
 
-	writeln("Problema TSP con solucion GRASP (n = ", n, "):");	
+
+	writeln("Problema TSP con solucion GRASP (n = ", n, "):");
 	forall(N_actual in MAX_N) do
 		writeln("N = ", N_actual, ":");
-	
+
 		!==============================================================================
 		! SOLUCION TSP GRASP
 		!==============================================================================
@@ -58,22 +60,22 @@ model "tsp_grasp_tsp_100_2"
 			forall(i in p_nodos) do
 				visitados(i) := 0;
 			end-do
-			
+
 			nodo_inicial	:= ceil(n * random);
 			nodo_anterior	:= nodo_inicial;
 			visitados(nodo_inicial) := 1;
 			num_nodos := 1;
-			
+
 			distancia_total := 0;
 			while (num_nodos < n) do
 				! Limpiamos el vector de marcados de la lista RCL
 				forall(i in p_nodos) do
 					marcados(i) := 0;
 				end-do
-				
+
 				! Creamos la lista RCL
 				forall(r in 1..MAX_K) do
-					! Buscamos el i más cercano que no esté todavía en la lista RCL
+					! Buscamos el i mÃ¡s cercano que no estÃ© todavÃ­a en la lista RCL
 					aux := MAX_INT;
 					forall(i in p_nodos | visitados(i) <> 1 and marcados(i) <> 1) do
 						if(distancias(nodo_anterior, i) < aux) then
@@ -81,35 +83,35 @@ model "tsp_grasp_tsp_100_2"
 							i_cercano := i;
 						end-if
 					end-do
-					
-					! Introducimos el i más cercano en la lista RCL
+
+					! Introducimos el i mÃ¡s cercano en la lista RCL
 					lista_rcl(r) := i_cercano;
 					marcados(i_cercano) := 1;
 				end-do
-				
+
 				! Escogemos un elemento aleatorio de la lista RCL
 				i_rcl := lista_rcl( ceil(MAX_K * random) );
-				
+
 				! Introducimos el i aleatorio en la solucion
 				siguientes2(nodo_anterior) := i_rcl;
 				visitados(i_rcl) := 1;
 				distancia_total += distancias(nodo_anterior, i_rcl);
 				num_nodos += 1;
-				
+
 				nodo_anterior := i_rcl;
 			end-do
-			
-			! Añadimos la conexión entre el último nodo y el primero
+
+			! AÃ±adimos la conexiÃ³n entre el Ãºltimo nodo y el primero
 			siguientes2(nodo_anterior) := nodo_inicial;
 			distancia_total += distancias(nodo_anterior, nodo_inicial);
-	
-	
+
+
 			! Hacemos la mejora 2-OPT
 			flag1 := 0;
 			while(flag1 = 0) do
 				mejora_max := 0;
-				i_intercambio := -1; j_intercambio := -1; 
-				
+				i_intercambio := -1; j_intercambio := -1;
+
 				forall(	i in p_nodos, j in p_nodos |
 						i <> j and siguientes2(i) <> j and siguientes2(j) <> i ) do
 					! Calculamos la mejora del intercambio
@@ -117,64 +119,62 @@ model "tsp_grasp_tsp_100_2"
 					s_j := siguientes2(j);
 					delta_ij := distancias(i,s_i) + distancias(j,s_j) -
 								distancias(i,j) - distancias(s_i,s_j);
-								
+
 					if(delta_ij > mejora_max) then
 						mejora_max := delta_ij;
 						i_intercambio := i;
 						j_intercambio := j;
 					end-if
 				end-do
-				
+
 				if(mejora_max = 0) then
 					! Salimos del bucle sin hacer el intercambio
 					flag1 := 1;
 				else
 					! Realizamos el intercambio
 					siguientes3 := siguientes2;
-								
+
 					siguientes2(i_intercambio) := j_intercambio;
 					siguientes2(siguientes3(i_intercambio)) := siguientes3(j_intercambio);
-					
-					flag	:= 0;
-					actual	:= siguientes3(i_intercambio);
-					while(flag = 0) do
-						if (actual = j_intercambio) then
-							flag := 1;
-						else
-							siguiente := siguientes3(actual);
-							siguientes2(siguiente) := actual;
-							actual := siguiente;
-						end-if
+
+					actual := siguientes3(i_intercambio);
+					while(actual <> j_intercambio) do
+						siguiente := siguientes3(actual);
+						siguientes2(siguiente) := actual;
+						actual := siguiente;
 					end-do
-					
+
 					! Actualizamos la distancia total
 					distancia_total -= mejora_max;
 				end-if
 			end-do
-	
-	
-			! Comprobamos si la solución actual	es mejor a la de las iteraciones anteriores de N
+
+			! Comprobamos si la soluciÃ³n actual	es mejor a la de las iteraciones anteriores de N
 			if(distancia_total < distancia_minima) then
 				distancia_minima := distancia_total;
 				siguientes := siguientes2;
 			end-if
 		end-do
-		
-		
+
+
 		! SALIDA
-		writeln("Distancia Total: ", distancia_minima);	
-		write("Conexiones:");
-		nodo_inicial	:= ceil(n * random);
-		nodo_actual		:= nodo_inicial;
-		flag := 0;
-		while(flag = 0) do
-			if(siguientes(nodo_actual) = nodo_inicial) then
-				flag := 1;
-			else
-				write(" -> ", siguientes(nodo_actual));
-				nodo_actual := siguientes(nodo_actual);
-			end-if
+		actual := 1;
+		writeln("Problema TSP (n = ", n, ")");
+		writeln("Distancia Total: ", distancia_total);
+		write("Conexiones: ", actual);
+
+		arrows := IVEaddplot("arrows"+N_actual, IVE_BLUE);
+		labels := IVEaddplot("labels"+N_actual, IVE_WHITE);
+		IVEdrawlabel(labels, coords(actual,2), coords(actual,3), ""+actual);
+
+		while(siguientes(actual) <> 1) do
+			siguiente := siguientes(actual);
+			write(" -> ", siguiente);
+			IVEdrawarrow(arrows, coords(actual,2), coords(actual,3), coords(siguiente,2), coords(siguiente,3));
+			IVEdrawlabel(labels, coords(siguiente,2), coords(siguiente,3), ""+siguiente);
+			actual := siguiente;
 		end-do
+
 		writeln("\n");
-	end-do	
+	end-do
 end-model

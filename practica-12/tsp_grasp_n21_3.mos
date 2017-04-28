@@ -7,35 +7,35 @@ model "tsp_grasp_n21_3"
 		MAX_K			= 5;
 		n				: integer;
 	end-declarations
-	
+
 	! INICIALIZACION 1
 	fopen(archivo_datos, F_INPUT);
 	read(n);
-	
+
 	! DECLARACIONES 2
 	declarations
 		p_nodos	= 1..n;
-		
+
 		distancias	: array(p_nodos, p_nodos) of integer;
 		visitados	: array(p_nodos) of integer;
 		siguientes	: array(p_nodos) of integer;
 		siguientes2	: array(p_nodos) of integer;
 		siguientes3	: array(p_nodos) of integer;
-		
+
 		lista_rcl	: array(1..MAX_K) of integer;
 		marcados	: array(p_nodos) of integer;
 	end-declarations
-	
+
 	! INICIALIZACION 2
 	forall(i in p_nodos, j in p_nodos)
 		read(distancias(i,j));
 	fclose(F_INPUT);
-	
 
-	writeln("Problema TSP con solucion GRASP (n = ", n, "):");	
+
+	writeln("Problema TSP con solucion GRASP (n = ", n, "):");
 	forall(N_actual in MAX_N) do
 		writeln("N = ", N_actual, ":");
-	
+
 		!==============================================================================
 		! SOLUCION TSP GRASP
 		!==============================================================================
@@ -45,22 +45,22 @@ model "tsp_grasp_n21_3"
 			forall(i in p_nodos) do
 				visitados(i) := 0;
 			end-do
-			
+
 			nodo_inicial	:= ceil(n * random);
 			nodo_anterior	:= nodo_inicial;
 			visitados(nodo_inicial) := 1;
 			num_nodos := 1;
-			
+
 			distancia_total := 0;
 			while (num_nodos < n) do
 				! Limpiamos el vector de marcados de la lista RCL
 				forall(i in p_nodos) do
 					marcados(i) := 0;
 				end-do
-				
+
 				! Creamos la lista RCL
 				forall(r in 1..MAX_K) do
-					! Buscamos el i más cercano que no esté todavía en la lista RCL
+					! Buscamos el i mï¿½s cercano que no estï¿½ todavï¿½a en la lista RCL
 					aux := MAX_INT;
 					forall(i in p_nodos | visitados(i) <> 1 and marcados(i) <> 1) do
 						if(distancias(nodo_anterior, i) < aux) then
@@ -68,35 +68,35 @@ model "tsp_grasp_n21_3"
 							i_cercano := i;
 						end-if
 					end-do
-					
-					! Introducimos el i más cercano en la lista RCL
+
+					! Introducimos el i mï¿½s cercano en la lista RCL
 					lista_rcl(r) := i_cercano;
 					marcados(i_cercano) := 1;
 				end-do
-				
+
 				! Escogemos un elemento aleatorio de la lista RCL
 				i_rcl := lista_rcl( ceil(MAX_K * random) );
-				
+
 				! Introducimos el i aleatorio en la solucion
 				siguientes2(nodo_anterior) := i_rcl;
 				visitados(i_rcl) := 1;
 				distancia_total += distancias(nodo_anterior, i_rcl);
 				num_nodos += 1;
-				
+
 				nodo_anterior := i_rcl;
 			end-do
-			
-			! Añadimos la conexión entre el último nodo y el primero
+
+			! Aï¿½adimos la conexiï¿½n entre el ï¿½ltimo nodo y el primero
 			siguientes2(nodo_anterior) := nodo_inicial;
 			distancia_total += distancias(nodo_anterior, nodo_inicial);
-	
-	
+
+
 			! Hacemos la mejora 2-OPT
 			flag1 := 0;
 			while(flag1 = 0) do
 				mejora_max := 0;
-				i_intercambio := -1; j_intercambio := -1; 
-				
+				i_intercambio := -1; j_intercambio := -1;
+
 				forall(	i in p_nodos, j in p_nodos |
 						i <> j and siguientes2(i) <> j and siguientes2(j) <> i ) do
 					! Calculamos la mejora del intercambio
@@ -104,24 +104,24 @@ model "tsp_grasp_n21_3"
 					s_j := siguientes2(j);
 					delta_ij := distancias(i,s_i) + distancias(j,s_j) -
 								distancias(i,j) - distancias(s_i,s_j);
-								
+
 					if(delta_ij > mejora_max) then
 						mejora_max := delta_ij;
 						i_intercambio := i;
 						j_intercambio := j;
 					end-if
 				end-do
-				
+
 				if(mejora_max = 0) then
 					! Salimos del bucle sin hacer el intercambio
 					flag1 := 1;
 				else
 					! Realizamos el intercambio
 					siguientes3 := siguientes2;
-								
+
 					siguientes2(i_intercambio) := j_intercambio;
 					siguientes2(siguientes3(i_intercambio)) := siguientes3(j_intercambio);
-					
+
 					flag	:= 0;
 					actual	:= siguientes3(i_intercambio);
 					while(flag = 0) do
@@ -133,35 +133,32 @@ model "tsp_grasp_n21_3"
 							actual := siguiente;
 						end-if
 					end-do
-					
+
 					! Actualizamos la distancia total
 					distancia_total -= mejora_max;
 				end-if
 			end-do
-	
-	
-			! Comprobamos si la solución actual	es mejor a la de las iteraciones anteriores de N
+
+
+			! Comprobamos si la soluciï¿½n actual	es mejor a la de las iteraciones anteriores de N
 			if(distancia_total < distancia_minima) then
 				distancia_minima := distancia_total;
 				siguientes := siguientes2;
 			end-if
 		end-do
-		
-		
+
+
 		! SALIDA
-		writeln("Distancia Total: ", distancia_minima);	
-		write("Conexiones:");
-		nodo_inicial	:= ceil(n * random);
-		nodo_actual		:= nodo_inicial;
-		flag := 0;
-		while(flag = 0) do
-			if(siguientes(nodo_actual) = nodo_inicial) then
-				flag := 1;
-			else
-				write(" -> ", siguientes(nodo_actual));
-				nodo_actual := siguientes(nodo_actual);
-			end-if
+		actual := 1;
+		writeln("Problema TSP (n = ", n, ")");
+		writeln("Distancia Total: ", distancia_total);
+		write("Conexiones: ", actual);
+		while(siguientes(actual) <> 1) do
+			siguiente := siguientes(actual);
+			write(" -> ", siguiente);
+			actual := siguiente;
 		end-do
 		writeln("\n");
-	end-do	
+
+	end-do
 end-model

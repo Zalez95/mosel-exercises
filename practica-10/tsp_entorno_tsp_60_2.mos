@@ -1,5 +1,7 @@
 !@encoding CP1252
 model "tsp_entorno_tsp_60_2"
+	uses "mmive";
+	
 	! DECLARACIONES 1
 	declarations
 		n : integer;
@@ -71,18 +73,20 @@ model "tsp_entorno_tsp_60_2"
 	
 	
 	! SALIDA
+	actual := 1;
 	writeln("Problema TSP (n = ", n, ")");
 	writeln("Distancia Total: ", distancia_total);
-		
-	write("\nConexiones:");
-	aux := 1;
-	flag := 0;
-	while(flag = 0) do
-		if(siguientes(aux) = 1) then
-			flag := 1;
-		else
-			write(" -> ", siguientes(aux));
-			aux := siguientes(aux);
-		end-if
+	write("Conexiones: ", actual);
+	
+	arrows := IVEaddplot("arrows", IVE_BLUE);
+	labels := IVEaddplot("labels", IVE_WHITE);
+	IVEdrawlabel(labels, coords(actual,2), coords(actual,3), ""+actual);
+
+	while(siguientes(actual) <> 1) do
+		siguiente := siguientes(actual);
+		write(" -> ", siguiente);
+		IVEdrawarrow(arrows, coords(actual,2), coords(actual,3), coords(siguiente,2), coords(siguiente,3));
+		IVEdrawlabel(labels, coords(siguiente,2), coords(siguiente,3), ""+siguiente);
+		actual := siguiente;
 	end-do
 end-model

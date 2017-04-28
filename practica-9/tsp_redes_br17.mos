@@ -62,6 +62,7 @@ model "tsp_redes_br17"
 	! SALIDA
 	writeln("Problema TSP con restricciones de redes (n = ", n, ")");
 	writeln("Solucion: ", getobjval);
-	writeln("\nValores de x:");forall(i in p_nodos, j in p_nodos | x(i,j).sol = 1)
+	writeln("\nValores de x:");
+	forall(i in p_nodos, j in p_nodos | x(i,j).sol = 1)
 		write(" (", i, ", ", j, ")");
 end-model

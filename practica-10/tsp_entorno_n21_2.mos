@@ -58,18 +58,13 @@ model "tsp_entorno_n21_2"
 	
 	
 	! SALIDA
+	actual := 1;
 	writeln("Problema TSP (n = ", n, ")");
 	writeln("Distancia Total: ", distancia_total);
-		
-	write("\nConexiones:");
-	aux := 1;
-	flag := 0;
-	while(flag = 0) do
-		if(siguientes(aux) = 1) then
-			flag := 1;
-		else
-			write(" -> ", siguientes(aux));
-			aux := siguientes(aux);
-		end-if
+	write("Conexiones: ", actual);
+	while(siguientes(actual) <> 1) do
+		siguiente := siguientes(actual);
+		write(" -> ", siguiente);
+		actual := siguiente;
 	end-do
 end-model

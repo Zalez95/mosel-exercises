@@ -5,7 +5,7 @@ model "tsptw-n40w20_001"
 	! DECLARACIONES 1
 	declarations
 		n				: integer;
-		archivo_datos	= "data/n40w20.001.dat";
+		archivo_datos	= "model.dat";
 		M				= MAX_INT;
 	end-declarations
 	
@@ -17,6 +17,7 @@ model "tsptw-n40w20_001"
 	! DECLARACIONES 2
 	declarations
 		p_nodos	= 1..n;
+		p_lim_u	= 2..n;
 		
 		d		: array(p_nodos, p_nodos) of integer;
 		a		: array(p_nodos) of integer;
@@ -24,6 +25,8 @@ model "tsptw-n40w20_001"
 		
 		x		: array(p_nodos, p_nodos) of mpvar;
 		beta	: array(p_nodos) of mpvar;
+		
+		u		: array(p_lim_u) of mpvar;
 	end-declarations
 	
 	! INICIALIZACION 2
@@ -59,9 +62,14 @@ model "tsptw-n40w20_001"
 		v_tiempo_b(i) := beta(i) <= b(i);
 	end-do
 	
+	! Restricciones de Tucker y Miller
+	forall(i in p_lim_u, j in p_lim_u | i <> j)
+		tucker_miller(i,j) := u(i) - u(j) + n * x(i,j) <= n - 1;
+	
 	! Valor a minimizar
 	z := sum(i in p_nodos, j in p_nodos) d(i,j) * x(i,j);
 	minimize(z);
+	
 	
 	! SALIDA
 	writeln("Práctica 14 TSPTW exacta (n = ", n, "):");

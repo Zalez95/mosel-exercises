@@ -2,15 +2,16 @@
 model "tsp_sa_n21_1"
 	! DECLARACIONES 1
 	declarations
-		n				: integer;
+		archivo_datos	= "data/n21_1.dat"
 		ALPHA			= 0.961;
 		T_INICIAL		= 10000.0;
 		MAX_K			= 580000;
 		MAX_ITER		= 950000000;
+		n				: integer;
 	end-declarations
 	
 	! INICIALIZACION 1
-	fopen("data/n21_1.dat", F_INPUT);
+	fopen(archivo_datos, F_INPUT);
 	read(n);
 	
 	! DECLARACIONES 2
@@ -70,20 +71,16 @@ model "tsp_sa_n21_1"
 	distancia_total += distancias(nodo_anterior, nodo_inicial);	
 	
 	! SALIDA
+	actual := 1;
 	writeln("Distancia Total Greedy: ", distancia_total);
-	write("Conexiones:");
-	nodo_inicial	:= ceil(n * random);
-	nodo_actual		:= nodo_inicial;
-	flag := 0;
-	while(flag = 0) do
-		if(siguientes(nodo_actual) = nodo_inicial) then
-			flag := 1;
-		else
-			write(" -> ", siguientes(nodo_actual));
-			nodo_actual := siguientes(nodo_actual);
-		end-if
+	write("Conexiones: ", actual);
+	while(siguientes(actual) <> 1) do
+		siguiente := siguientes(actual);
+		write(" -> ", siguiente);
+		actual := siguiente;
 	end-do
 	writeln("\n");
+	
 	
 	!==============================================================================
 	! ALGORITMO SIMULATED ANNEALING
@@ -170,19 +167,15 @@ model "tsp_sa_n21_1"
 	end-do
 	
 	! SALIDA
+	actual := 1;
 	writeln("Distancia Total Simulated Annealing: ", distancia_total);
-	write("Conexiones:");
-	nodo_inicial	:= ceil(n * random);
-	nodo_actual		:= nodo_inicial;
-	flag := 0;
-	while(flag = 0) do
-		if(siguientes(nodo_actual) = nodo_inicial) then
-			flag := 1;
-		else
-			write(" -> ", siguientes(nodo_actual));
-			nodo_actual := siguientes(nodo_actual);
-		end-if
+	writeln("Distancia Total: ", distancia_total);
+	write("Conexiones: ", actual);
+	while(siguientes(actual) <> 1) do
+		siguiente := siguientes(actual);
+		write(" -> ", siguiente);
+		actual := siguiente;
 	end-do
-	writeln("");
+	writeln("\n");
 	
 end-model

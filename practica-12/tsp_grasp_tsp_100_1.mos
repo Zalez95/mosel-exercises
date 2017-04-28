@@ -1,5 +1,7 @@
 !@encoding CP1252
 model "tsp_grasp_tsp_100_1"
+	uses "mmive";
+	
 	! DECLARACIONES 1
 	declarations
 		archivo_datos	= "data/tsp_100_1.txt"
@@ -131,27 +133,21 @@ model "tsp_grasp_tsp_100_1"
 				else
 					! Realizamos el intercambio
 					siguientes3 := siguientes2;
-								
+		
 					siguientes2(i_intercambio) := j_intercambio;
 					siguientes2(siguientes3(i_intercambio)) := siguientes3(j_intercambio);
-					
-					flag	:= 0;
-					actual	:= siguientes3(i_intercambio);
-					while(flag = 0) do
-						if (actual = j_intercambio) then
-							flag := 1;
-						else
-							siguiente := siguientes3(actual);
-							siguientes2(siguiente) := actual;
-							actual := siguiente;
-						end-if
+		
+					actual := siguientes3(i_intercambio);
+					while(actual <> j_intercambio) do
+						siguiente := siguientes3(actual);
+						siguientes2(siguiente) := actual;
+						actual := siguiente;
 					end-do
 					
 					! Actualizamos la distancia total
 					distancia_total -= mejora_max;
 				end-if
 			end-do
-	
 	
 			! Comprobamos si la solución actual	es mejor a la de las iteraciones anteriores de N
 			if(distancia_total < distancia_minima) then
@@ -162,19 +158,23 @@ model "tsp_grasp_tsp_100_1"
 		
 		
 		! SALIDA
-		writeln("Distancia Total: ", distancia_minima);	
-		write("Conexiones:");
-		nodo_inicial	:= ceil(n * random);
-		nodo_actual		:= nodo_inicial;
-		flag := 0;
-		while(flag = 0) do
-			if(siguientes(nodo_actual) = nodo_inicial) then
-				flag := 1;
-			else
-				write(" -> ", siguientes(nodo_actual));
-				nodo_actual := siguientes(nodo_actual);
-			end-if
+		actual := 1;
+		writeln("Problema TSP (n = ", n, ")");
+		writeln("Distancia Total: ", distancia_total);
+		write("Conexiones: ", actual);
+	
+		arrows := IVEaddplot("arrows"+N_actual, IVE_BLUE);
+		labels := IVEaddplot("labels"+N_actual, IVE_WHITE);
+		IVEdrawlabel(labels, coords(actual,2), coords(actual,3), ""+actual);
+	
+		while(siguientes(actual) <> 1) do
+			siguiente := siguientes(actual);
+			write(" -> ", siguiente);
+			IVEdrawarrow(arrows, coords(actual,2), coords(actual,3), coords(siguiente,2), coords(siguiente,3));
+			IVEdrawlabel(labels, coords(siguiente,2), coords(siguiente,3), ""+siguiente);
+			actual := siguiente;
 		end-do
+	
 		writeln("\n");
 	end-do	
 end-model
