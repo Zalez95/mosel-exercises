@@ -1,8 +1,8 @@
 !@encoding CP1252
-model "tsp_sa_n21_1"
+model "tsp_sa_n21_2"
 	! DECLARACIONES 1
 	declarations
-		archivo_datos	= "data/n21_1.dat"
+		archivo_datos	= "data/n21_2.dat"
 		ALPHA			= 0.961;
 		T_INICIAL		= 10000.0;
 		MAX_K			= 580000;

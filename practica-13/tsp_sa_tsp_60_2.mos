@@ -1,11 +1,13 @@
 !@encoding CP1252
-model "tsp_sa_n21_1"
+model "tsp_sa_tsp_60_2"
+	uses "mmive"
+	
 	! DECLARACIONES 1
 	declarations
-		archivo_datos	= "data/n21_1.dat"
-		ALPHA			= 0.961;
-		T_INICIAL		= 10000.0;
-		MAX_K			= 580000;
+		archivo_datos	= "data/tsp_60_2.txt"
+		ALPHA			= 0.931;
+		T_INICIAL		= 100000.0;
+		MAX_K			= 650000;
 		MAX_ITER		= 950000000;
 		n				: integer;
 	end-declarations
@@ -18,6 +20,8 @@ model "tsp_sa_n21_1"
 	declarations
 		p_nodos			= 1..n;
 		
+		coords		: array(p_nodos, 1..3) of real;
+		
 		distancias		: array(p_nodos, p_nodos) of integer;
 		visitados		: array(p_nodos) of integer;
 		siguientes		: array(p_nodos) of integer;
@@ -27,11 +31,22 @@ model "tsp_sa_n21_1"
 	end-declarations
 	
 	! INICIALIZACION 2
-	forall(i in p_nodos, j in p_nodos)
-		read(distancias(i,j));
+	forall(i in p_nodos) do
+		read(coords(i,1));
+		read(coords(i,2));
+		read(coords(i,3));
+	end-do
 	fclose(F_INPUT);
 
-	writeln("TSP SIMULATED ANNEALING (n = ", n, "):")	
+	! Calculamos las distancias mediante las coordenadas leidas
+	forall(i in p_nodos, j in p_nodos)
+		if (i <> j) then
+			distancias(i,j) := round(sqrt( (coords(i,2) - coords(j,2))^2 + (coords(i,3) - coords(j,3))^2 ));
+		else
+			distancias(i,j) := MAX_INT;
+		end-if
+
+	writeln("TSP SIMULATED ANNEALING (n = ", n, "):")
 	
 	!==============================================================================
 	! SOLUCION TSP GREEDY
@@ -155,16 +170,22 @@ model "tsp_sa_n21_1"
 		iter += 1;
 	end-do
 	
+
 	! SALIDA
 	actual := 1;
-	writeln("Distancia Total Simulated Annealing: ", distancia_total);
+	writeln("Problema TSP (n = ", n, ")");
 	writeln("Distancia Total: ", distancia_total);
 	write("Conexiones: ", actual);
+
+	arrows := IVEaddplot("arrows", IVE_BLUE);
+	labels := IVEaddplot("labels", IVE_WHITE);
+	IVEdrawlabel(labels, coords(actual,2), coords(actual,3), ""+actual);
+
 	while(siguientes(actual) <> 1) do
 		siguiente := siguientes(actual);
 		write(" -> ", siguiente);
+		IVEdrawarrow(arrows, coords(actual,2), coords(actual,3), coords(siguiente,2), coords(siguiente,3));
+		IVEdrawlabel(labels, coords(siguiente,2), coords(siguiente,3), ""+siguiente);
 		actual := siguiente;
 	end-do
-	writeln("\n");
-	
 end-model

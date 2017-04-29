@@ -1,0 +1,106 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+
+% Configuración páginas
+\usepackage{vmargin}							% Márgenes
+
+\usepackage{sectsty}							% Fuente de los títulos
+\allsectionsfont{\normalfont \Large \scshape}
+
+\usepackage{graphicx}							% Imágenes
+\graphicspath{{images/}}
+
+\usepackage{tabularx}							% Otras
+\usepackage{multirow}							% Celdas ocupando varias filas
+
+\usepackage{mathtools}							% Matematicas
+\newcommand\numberthis{							% numeración en align*
+	\addtocounter{equation}{1}\tag{\theequation}
+}
+
+\usepackage{algorithm,algpseudocode}			% Algoritmos en latex
+\makeatletter
+\renewcommand{\ALG@name}{Algoritmo}				% Cambiamos la palabra "Algorithm"
+\makeatother
+\algnewcommand\Input{\item[\textbf{Entrada:}]}
+\let\oldReturn\Return
+\renewcommand{\Return}{\State\oldReturn}
+
+% Configuración del título
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\title{
+	\vspace{-25pt}
+	\normalfont \Large \textsc{
+		Modelos de Investigación Operativa,
+        Ingeniería Informática\\
+        Universidad de Valladolid
+	}\\[10pt]
+	\horrule{1pt}\\[10pt]
+	\huge \textbf{
+		Práctica 14
+	}\\
+	\horrule{1pt}
+}
+\author{
+	\normalfont \Large Daniel González Alonso
+}
+\date{
+	\normalfont \large \today
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+
+%%%% RESUMEN %%%%
+\begin{abstract}
+	En este documento se describen los problemas y los resultados obtenidos de la práctica 14 del tema 5 de la asignatura Modelos de Investigación Operativa de Ingeniería Informática, Universidad de Valladolid.
+\end{abstract}
+
+%%%% DESARROLLO %%%%
+\section{Introducción}
+Esta práctica trata de problemas del Viajante con Ventanas de Tiempo (TSPTW) los cuales son una variante de los problemas TSP presentados en anteriores prácticas. Como en el problema TSP, este problema busca encontrar un camino de coste mínimo que empiece y acabe en el mismo nodo recorriendo todos los nodos de un grafo. La diferencia que tiene el problema TSPTW es que tenemos unas \textit{ventanas de tiempo} por cada nodo. Estas ventanas de tiempo limitan el momento en que el viajante puede pasar por el nodo al intervalo indicado por esta ventana. La formulación del problema TSPTW es la siguiente:
+
+\begin{align*}\numberthis
+	\label{tsptw}
+   	&\textrm{Minimizar }	&& \sum_{i \in V \cup \{0\}}{ \sum_{i \in V \cup \{0\}}{c_{i,j} \cdot x_{i,j}} }	&& \\
+   	&\textrm{Sujeto a }		&& \sum_{i \in V \cup \{0\}, i \neq j}{x_{i,j}} = 1	&& \forall j \in V \cup \{0\}	\\
+    &						&& \sum_{j \in V \cup \{0\}, j \neq i}{x_{i,j}} = 1	&& \forall i \in V \cup \{0\}	\\
+    &						&& \beta_{j} \geq \beta_{i} + c_{i,j} - M \cdot (1 - x_{i,j})	&& \forall i,j \in V \cup \{0\}, j \neq 0	\\
+    &						&& a_{i} \leq \beta_{i}	\leq b_{i}	&& \forall i \in V \cup \{0\}	\\
+	&						&& x_{i,j} \in \{0,1\}		&& \forall i,j \in V \cup \{0\}	\\
+    &						&& \beta_{i} \in \mathbf{R}_{\geq 0}	&& \forall i \in V \cup \{0\}	\\
+\end{align*}
+
+Siendo ${c_{i,j}}$ el coste o distancia del arco entre los nodos ${i}$ y ${j}$, ${x_{i,j}}$ la variable de decisión que indica si en el camino de la solución se incluirá el arco que hay entre los nodos ${i}$ y ${j}$, ${a_{i}}$ y ${b_{i}}$ indican que el nodo ${i}$ tiene una ventana de tiempo ${[a_{i}, b_{i}]}$ y ${\beta_{i}}$ es una variable de decisión que indica el tiempo en el que el nodo ${i}$ es visitado.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Desarrollo}
+En esta práctica se nos pide resolver el problema \textit{TSPTW} y aplicarlo a los ficheros de datos \texttt{data/n40w20.001.dat}, \texttt{data/n40w60.004.dat} y \texttt{data/n60w20.005.dat}.\\
+
+Este problema se encuentra resuelto mediante \textit{Xpress Mosel} en los ficheros \texttt{tsptw\_n40w20\_001.mos}, \texttt{tsptw\_n40w60\_004.mos} y \texttt{tsptw\_n60w20\_005.mos} (el nombre indica el fichero de datos empleado).\\
+
+Para implementar este algoritmo se siguió la formulación \ref{tsptw} se siguió el mismo esquema que el descrito pero con la diferencia de que ademas se tuvieron que añadir las restricciones de Tucker y Miller descritas ya en la práctica 9. Además hubo que modificar los ficheros de datos para que siguiesen el formato de archivos \texttt{.dat} y así poder ejecutarlos en \textit{NEOS Server}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Resultados}
+Los resultados obtenidos para los ficheros de datos de esta práctica fueron los siguientes:
+
+\begin{table}[!htbp]
+\label{results_tsptw}
+\centering
+\begin{tabularx}{\textwidth}{|p{2cm}|X|X|X|}
+\hline
+Problema TSP    & \texttt{n40w20.001}   & \texttt{n40w60.004}   & \texttt{n60w20.005}	\\ \hline
+Distancia Total & 500	& 382	& 603	\\ \hline
+Conexiones    & (1 ,8) (2 ,19) (3 ,36) (4 ,39) (5 ,24) (6 ,37) (7 ,16) (8 ,14) (9 ,2) (10 ,20) (11 ,32) (12 ,10) (13 ,40) (14 ,17) (15 ,6) (16 ,13) (17 ,38) (18 ,41) (19 ,34) (20 ,28) (21 ,18) (22 ,27) (23 ,22) (24 ,33) (25 ,21) (26 ,5) (27 ,30) (28 ,35) (29 ,25) (30 ,12) (31 ,1) (32 ,23) (33 ,4) (34 ,15) (35 ,29) (36 ,26) (37 ,11) (38 ,7) (39 ,9) (40 ,3) (41 ,31)	& (1 ,14) (2 ,23) (3 ,28) (4 ,8) (5 ,30) (6 ,12) (7 ,25) (8 ,16) (9 ,24) (10 ,31) (11 ,6) (12 ,40) (13 ,2) (14 ,20) (15 ,9) (16 ,29) (17 ,36) (18 ,41) (19 ,38) (20 ,27) (21 ,3) (22 ,35) (23 ,18) (24 ,11) (25 ,33) (26 ,13) (27 ,34) (28 ,26) (29 ,10) (30 ,32) (31 ,19) (32 ,7) (33 ,37) (34 ,4) (35 ,17) (36 ,21) (37 ,39) (38 ,5) (39 ,15) (40 ,22) (41 ,1)	& (1 ,9) (2 ,53) (3 ,50) (4 ,45) (5 ,1) (6 ,25) (7 ,58) (8 ,30) (9 ,12) (10 ,6) (11 ,21) (12 ,14) (13 ,51) (14 ,36) (15 ,10) (16 ,42) (17 ,29) (18 ,7) (19 ,27) (20 ,59) (21 ,56) (22 ,33) (23 ,2) (24 ,39) (25 ,61) (26 ,22) (27 ,43) (28 ,37) (29 ,38) (30 ,35) (31 ,15) (32 ,44) (33 ,49) (34 ,8) (35 ,4) (36 ,19) (37 ,55) (38 ,46) (39 ,41) (40 ,28) (41 ,60) (42 ,5) (43 ,52) (44 ,24) (45 ,48) (46 ,20) (47 ,54) (48 ,11) (49 ,47) (50 ,26) (51 ,34) (52 ,13) (53 ,57) (54 ,23) (55 ,32) (56 ,17) (57 ,18) (58 ,40) (59 ,3) (60 ,31) (61 ,16)	\\ \hline
+Tiempo de llegada & 0, 145, 69, 131, 93, 205, 32, 6, 141, 296, 246, 290, 50, 12, 189, 38, 21, 430, 163, 299, 391, 280, 274, 108, 364, 82, 287, 315, 345, 290, 499, 265, 116, 168, 330, 73, 224, 25, 135, 63, 481	& 0, 319, 263, 31, 57, 176, 86, 33, 136, 39, 167, 179, 309, 3, 127, 35, 211, 427, 51, 7, 247, 195, 356, 161, 94, 296, 11, 272, 37, 75, 48, 81, 100, 29, 203, 245, 107, 54, 116, 188, 456	& 0, 236, 182, 88, 598, 464, 263, 77, 11, 451, 107, 17, 61, 22, 434, 528, 130, 257, 36, 175, 114, 201, 231, 339, 491, 199, 46, 292, 141, 79, 413, 318, 205, 74, 83, 24, 302, 153, 360, 277, 381, 569, 52, 327, 98, 170, 223, 103, 213, 195, 66, 56, 245, 226, 311, 119, 249, 269, 179, 401, 525	\\ \hline
+\end{tabularx}
+\caption{Comparación de los resultados obtenidos}
+\end{table}
+
+\end{document}

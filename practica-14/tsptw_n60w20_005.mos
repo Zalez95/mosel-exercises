@@ -1,11 +1,11 @@
 !@encoding CP1252
-model "tsptw-n40w20_001"
+model "tsptw-n60w20_005"
 	uses "mmxprs";
 	setparam("XPRS_MAXTIME", 100)
 
 	! DECLARACIONES 1
 	declarations
-		archivo_datos	= "data/n40w20.001.dat";
+		archivo_datos	= "data/n60w20.005.dat";
 		M				= MAX_INT;
 		n				: integer;
 	end-declarations

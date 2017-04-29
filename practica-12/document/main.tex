@@ -26,7 +26,6 @@
 \algnewcommand\Input{\item[\textbf{Entrada:}]}
 \let\oldReturn\Return
 \renewcommand{\Return}{\State\oldReturn}
-\newcommand{\func}{\textrm}
 
 % Configuración del título
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
@@ -73,8 +72,8 @@ En esta práctica se nos pide implementar la solución al problema TSP mediante 
 \Function{GRASP}{${N}$}
     \State ${f^{\ast} \gets \infty}$
     \For{${i \gets 1,N}$}
-        \State ${x \gets \func{SoluciónGreedy()}}$
-        \State ${x \gets \func{BúsquedaLocal(} x \func{)}}$
+        \State ${x \gets \Call{SoluciónGreedy}{\null}}$
+        \State ${x \gets \Call{BúsquedaLocal}{x}}$
         \If{${f(x) < f^{\ast}}$}
             \State ${f^{\ast} \gets f(x)}$
             \State ${x^{\ast} \gets x}$
@@ -85,7 +84,7 @@ En esta práctica se nos pide implementar la solución al problema TSP mediante 
 \end{algorithmic}
 \end{algorithm}
 
-En nuestro caso, ${N}$ es el número máximo de iteraciones, ${\func{SoluciónGreedy()}}$ es la solución de la heurística del entorno y ${\func{BúsquedaLocal(} x \func{)}}$ es el algoritmo \textit{2-opt}.
+En nuestro caso, ${N}$ es el número máximo de iteraciones, ${\Call{SoluciónGreedy}{\null}}$ es la solución de la heurística del entorno y ${\Call{BúsquedaLocal}{x}}$ es el algoritmo \textit{2-opt}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
