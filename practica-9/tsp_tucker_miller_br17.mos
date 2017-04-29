@@ -1,0 +1,62 @@
+!@encoding CP1252
+model "tsp_tucker_miller_br17"
+	uses "mmxprs";
+	
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/br17.dat"
+		n				: integer;
+	end-declarations
+	
+	! INICIALIZACION 1
+	initializations from archivo_datos
+		n;
+	end-initializations
+	
+	! DECLARACIONES 2
+	declarations
+		p_nodos	= 1..n;
+		p_lim_u	= 2..n;
+
+		d		: array(p_nodos, p_nodos) of integer;
+		
+		x		: array(p_nodos, p_nodos) of mpvar;
+		y		: array(p_nodos, p_nodos) of mpvar;
+		u		: array(p_lim_u) of mpvar;
+	end-declarations
+	
+	! INICIALIZACION 2
+	initializations from archivo_datos
+		d;
+	end-initializations
+	
+	! MODELO
+	! x(i,j) binaria
+	forall(i in p_nodos, j in p_nodos)
+		x(i,j) is_binary;
+	
+	! Hay unicamente una arista que entra en cada punto
+	forall(j in p_nodos)
+		rest_j(j) := sum(i in p_nodos) x(i,j) = 1;
+	
+	! Hay unicamente una arista que sale de cada punto
+	forall(i in p_nodos)
+		rest_i(i) := sum(j in p_nodos) x(i,j) = 1;
+	
+	! Restricciones de Tucker y Miller
+	forall(i in p_lim_u, j in p_lim_u | i <> j)
+		tucker_miller(i,j) := u(i) - u(j) + n * x(i,j) <= n - 1;
+	
+	setparam("XPRS_MAXTIME", 30);	! Limite de tiempo de ejecucion
+	
+	! Valor a minimizar
+	solucion := sum(i in p_nodos, j in p_nodos) d(i,j) * x(i,j);
+	minimize(solucion);
+	
+	! SALIDA
+	writeln("Problema TSP con restricciones de Tucker y Miller (n = ", n, ")");
+	writeln("Solucion: ", getobjval);
+	writeln("\nValores de x:");
+	forall(i in p_nodos, j in p_nodos | x(i,j).sol = 1)
+		write(" (", i, ", ", j, ")");
+end-model

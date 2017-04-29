@@ -1,0 +1,87 @@
+!@encoding CP1252
+model "tsptw-n60w20_005"
+	uses "mmxprs";
+	setparam("XPRS_MAXTIME", 100)
+
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/n60w20.005.dat";
+		M				= MAX_INT;
+		n				: integer;
+	end-declarations
+
+	! INICIALIZACION 1
+	initializations from archivo_datos
+		n;
+	end-initializations
+
+	! DECLARACIONES 2
+	declarations
+		p_nodos	= 1..n;
+		p_lim_u = 2..n;
+
+		d		: array(p_nodos, p_nodos) of real;
+		a		: array(p_nodos) of real;
+		b		: array(p_nodos) of real;
+
+		x		: array(p_nodos, p_nodos) of mpvar;
+		beta	: array(p_nodos) of mpvar;
+
+		u		: array(p_lim_u) of mpvar;
+	end-declarations
+
+	! INICIALIZACION 2
+	initializations from archivo_datos
+		d;
+		a;
+		b;
+	end-initializations
+
+	forall(i in p_nodos)
+		d(i,i) := MAX_INT;
+
+
+	!==============================================================================
+	! MODELO
+	!==============================================================================
+	! Variables binarias para x
+	forall(i in p_nodos, j in p_nodos)
+		x(i,j) is_binary;
+
+	! Nos aseguramos de que los clientes sean visitados al menos una vez
+	forall(j in p_nodos)
+		una_vez1(j) := sum(i in p_nodos | i <> j) x(i,j) = 1;
+
+	forall(i in p_nodos)
+		una_vez2(i) := sum(j in p_nodos | j <> i) x(i,j) = 1;
+
+	! Nos aseguramos de que el tiempo de llegada a un nodo no sea menor que el
+	! tiempo de salida del nodo inmediatamente anterior
+	forall(i in p_nodos, j in p_nodos | j <> 1)
+		t_llegada(i,j) := beta(j) >= beta(i) + d(i,j) - M * (1 - x(i,j));
+
+	! Nos aseguramos de que se cumplan las ventanas de tiempo
+	forall(i in p_nodos) do
+		v_tiempo_a(i) := a(i) <= beta(i);
+		v_tiempo_b(i) := beta(i) <= b(i);
+	end-do
+
+	! Restricciones de Tucker y Miller
+	forall(i in p_lim_u, j in p_lim_u | i <> j)
+		tucker_miller(i,j) := u(i) - u(j) + n * x(i,j) <= n - 1;
+
+	! Valor a minimizar
+	z := sum(i in p_nodos, j in p_nodos) d(i,j) * x(i,j);
+	minimize(z);
+
+
+	! SALIDA
+	writeln("Practica 14 TSPTW exacta (n = ", n, "):");
+	writeln("\tz = ", getobjval);
+	write("\tConexiones:");
+	forall(i in p_nodos, j in p_nodos | x(i,j).sol = 1)
+		write(" (", i, " ,", j, ")");
+	write("\n\tTiempos de llegada:");
+	forall(i in p_nodos)
+		write(", ", i, " -> ", beta(i).sol);
+end-model

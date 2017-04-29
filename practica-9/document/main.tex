@@ -1,0 +1,143 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+
+% Configuración páginas
+\usepackage{vmargin}							% Márgenes
+
+\usepackage{sectsty}							% Fuente de los títulos
+\allsectionsfont{\normalfont \Large \scshape}
+
+\usepackage{graphicx}							% Imágenes
+\graphicspath{{images/}}
+
+\usepackage{tabularx}							% Otras tablas
+\usepackage{listliketab}						% Tratar indentacion distas como tablas
+
+\usepackage{mathtools}							% Matematicas
+\newcommand\numberthis{							% numeración en align*
+	\addtocounter{equation}{1}\tag{\theequation}
+}
+
+% Configuración del título
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\title{
+	\vspace{-25pt}
+	\normalfont \Large \textsc{
+		Modelos de Investigación Operativa,
+        Ingeniería Informática\\
+        Universidad de Valladolid
+	}\\[10pt]
+	\horrule{1pt}\\[10pt]
+	\huge \textbf{
+		Práctica 9
+	}\\
+	\horrule{1pt}
+}
+\author{
+	\normalfont \Large Daniel González Alonso
+}
+\date{
+	\normalfont \large \today
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+
+%%%% RESUMEN %%%%
+\begin{abstract}
+	En este documento se describen los problemas y los resultados obtenidos de la práctica 9 del tema 5 de la asignatura Modelos de Investigación Operativa de Ingeniería Informática, Universidad de Valladolid.
+\end{abstract}
+
+%%%% DESARROLLO %%%%
+\section{Introducción}
+Esta práctica trata de problemas TSP (\textit{Travelling Salesman Problem}). Los problemas TSP constan de un grafo ${G=(N,A)}$, donde ${N}$ son los nodos del grafo y ${A}$ los arcos entre éstos, con un coste asociado por cada arco, y el objetivo consiste en encontrar el camino Hamiltoniano (un camino que pase por todos los nodos) de coste mínimo. El modelo básico empleado para encontrar la solución de estos problemas es el siguiente:
+
+\begin{align*}\numberthis
+   	&\textrm{Minimizar }	&& \sum_{i}{ \sum_{j}{c_{i,j} \cdot x_{i,j}} }	&& \\
+   	&\textrm{Sujeto a }		&& \sum_{i}{x_{i,j}} = 1	&& \forall j	\\
+    &						&& \sum_{j}{x_{i,j}} = 1	&& \forall i	\\
+	&						&& x_{i,j} \in \{0,1\}		&& \forall i,j	\\
+\end{align*}
+
+Donde ${x_{i,j}}$ es una variable de decisión que representa si en la solución final el viajante empleará el camino que va desde ${i}$ hasta ${j}$ y ${c_{i,j}}$ es el coste (generalmente distancia) de usar el camino que va desde ${i}$ hasta ${j}$.
+
+El problema de este modelo es que su solución puede constar de varios \textit{subtours}, para que el camino tenga un único \textit{subtour} hay que añadir más restricciones. En el caso de esta práctica se nos pidió emplear \underline{restricciones de Tucker y Miller} o el uso de un \underline{problema auxiliar de redes}:
+
+\begin{enumerate}
+\item Restricciones de Tucker y Miller: Para obtener un único subtour mediante las restricciones de Tucker y Miller basta con introducir las siguientes restricciones al modelo anterior:
+
+\begin{align*}\numberthis
+   	& u_{i} - u_{j} + n \cdot x_{i,j} \leq n - 1	&& 2 \leq i \neq j \leq n	\\
+\end{align*}
+
+Estas restricciones lo que nos garantizan es que en caso de formarse algún subtour, todos contendrían al primer nodo, es decir, que solo haya un subtour.
+
+\item Problema auxiliar de redes: Para obtener un único subtour mediante las el problema auxiliar de redes basta con introducir las siguientes restricciones al modelo anterior:
+
+\begin{align*}\numberthis
+   	& \sum_{j}{y_{i,j}} - \sum_{j}{y_{j,i}} = b_{i}	&& i = 1 \ldots n	\\
+    & 0 \leq y_{i,j} \leq (n-1) \cdot x_{i,j}			&& \forall i,j		\\
+\end{align*}
+
+Asignando una oferta al primer nodo de ${b_{1} = n-1}$ y para el resto de nodos ofertas de ${b_{i} = -1, i=2 \ldots n}$. Estas restricciones lo que nos aseguran es que todos los nodos van a estar conectados entre si.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Desarrollo}
+\begin{enumerate}
+\item Para esta práctica se nos pide resolver el problema de TSP de forma exacta con los dos modelos vistos: las restricciones de Tucker y Miller y la formulación de redes. Para los ficheros de datos \texttt{data/br17.dat} y \texttt{data/burma14.dat}.
+
+Este problema se encuentra resuelto mediante \textit{Xpress Mosel} en los ficheros \texttt{tsp\_tucker \ \_miller\_burma14.mos} y \texttt{tsp\_tucker\_miller\_br17.mos} para el modelo con las restricciones de Tucker y Miller y en los ficheros \texttt{tsp\_redes\_burma14.mos} y \texttt{tsp\_redes \ \_br17.mos} en el caso del modelo auxiliar de redes. En ambos casos las soluciones se obtuvieron mediante \textit{NEOS Server} con los cual los ficheros de datos tuvieron que modificarse al formato \texttt{.dat}. En el caso del fichero de datos \texttt{data/burma14.dat} en vez de incluir una matriz con las distancias entre los nodos, incluía las coordenadas de cada nodo. Con lo cual antes de aplicar los modelos en ambos casos se tuvo que obtener esta matriz de distancia. Para ello se empleó la distancia Euclídea redondeada al entero más cercano. En caso de la distancia de un nodo a si mismo, se introducía en esta matriz en vez de 0 un valor ``infinito'' (\texttt{MAX\_INT}).
+
+Los resultados obtenidos fueron los siguientes:
+
+\newpage %%
+
+\begin{table}[!htbp]
+\label{results_100}
+\centering
+\begin{tabularx}{\textwidth}{|p{2cm}|X|X|}
+\hline
+& Modelo con restricciones de Tucker y Miller & Modelo auxiliar de redes \\ \hline
+Solución	& 39	& 39	\\ \hline
+Valores de x (arcos)	& (1, 12) (2, 11) (3, 14) (4, 5) (5, 8) (6, 15) (7, 16) (8, 17) (9, 10) (10, 2) (11, 13) (12, 6) (13, 3) (14, 1) (15, 7) (16, 4) (17, 9)	& (1, 8) (2, 10) (3, 12) (4, 7) (5, 4) (6, 16) (7, 6) (8, 17) (9, 5) (10, 13) (11, 14) (12, 1) (13, 11) (14, 3) (15, 2) (16, 15) (17, 9) \\ \hline
+\end{tabularx}
+\caption{Comparación de los resultados del fichero \texttt{br17.dat}}
+\end{table}
+
+\begin{table}[!htbp]
+\label{results_100}
+\centering
+\begin{tabularx}{\textwidth}{|p{2cm}|X|X|}
+\hline
+& Modelo con restricciones de Tucker y Miller & Modelo auxiliar de redes \\ \hline
+Solución	& 30	& 30	\\ \hline
+Valores de x (arcos)	& (1, 10) (2, 1) (3, 14) (4, 3) (5, 6) (6, 12) (7, 5) (8, 13) (9, 11) (10, 9) (11, 8) (12, 4) (13, 7) (14, 2)	& (1, 2) (2, 14) (3, 4) (4, 12) (5, 7) (6, 5) (7, 13) (8, 11) (9, 10) (10, 1) (11, 9) (12, 6) (13, 8) (14, 3) \\ \hline
+\end{tabularx}
+\caption{Comparación de los resultados del fichero \texttt{burma14.dat}}
+\end{table}
+
+\item También se nos pidió de forma voluntaria, resolver mediante uno de los dos modelos anteriores los ficheros de datos \texttt{data/n21\_1.dat}, \texttt{data/n21\_2.dat}, \texttt{data/n21\_3.dat}, \texttt{data/n21\_4} y \texttt{data/n21\_5.dat}.
+
+En mi caso emplee la formulación con restricciones de Tucker y Miller. Estos problemas se encuentran resueltos mediante \textit{Xpress Mosel} en los ficheros \texttt{tsp\_tucker\_miller \ \_n21\_1.mos}, \texttt{tsp\_tucker\_miller\_n21\_2.mos}, \texttt{tsp\_tucker\_miller\_n21\_3.mos}, \texttt{tsp\_tucker \ \_miller\_n21\_4.mos} y \texttt{tsp\_tucker\_miller\_n21\_5.mos} respectivamente. Al igual que para los datos anteriores estos problemas se ejecutaron en \textit{NEOS Server} por lo que hubo que cambiar el formato de los archivos al de los archivos \texttt{.dat} para poder ejecutarlos.
+
+Los resultados obtenidos fueron los siguientes:
+
+\begin{table}[!htbp]
+\label{results_100}
+\centering
+\begin{tabularx}{\textwidth}{|p{2cm}|X|X|X|X|X|}
+\hline
+& \texttt{n21\_1}	& \texttt{n21\_2}	& \texttt{n21\_3}	& \texttt{n21\_4}	& \texttt{n21\_5} \\ \hline
+Solución	& 198	& 174	& 213	& 189	& 193	\\ \hline
+Valores de x (arcos)	&  (1, 5) (2, 16) (3, 15) (4, 10) (5, 14) (6, 2) (7, 17) (8, 1) (9, 12) (10, 20) (11, 9) (12, 6) (13, 11) (14, 21) (15, 8) (16, 3) (17, 4) (18, 19) (19, 13) (20, 18) (21, 7)	& (1, 21) (2, 14) (3, 15) (4, 8) (5, 19) (6, 4) (7, 6) (8, 9) (9, 5) (10, 12) (11, 10) (12, 17) (13, 18) (14, 1) (15, 2) (16, 11) (17, 20) (18, 16) (19, 3) (20, 7) (21, 13)	& (2, 11) (3, 8) (4, 21) (5, 3) (6, 1) (7, 14) (8, 18) (9, 10) (10, 17) (11, 9) (12, 13) (13, 15) (14, 4) (15, 16) (16, 20) (17, 19) (18, 12) (19, 5) (21, 2)	& (1, 4) (2, 6) (3, 20) (4, 13) (5, 12) (6, 7) (7, 14) (8, 3) (9, 2) (10, 8) (11, 15) (12, 1) (13, 21) (14, 11) (15, 5) (16, 10) (17, 18) (18, 19) (19, 16) (20, 9) (21, 17)	& (1, 12) (2, 4) (3, 18) (4, 19) (5, 11) (6, 3) (7, 16) (8, 1) (9, 2) (10, 7) (11, 6) (12, 14) (13, 15) (14, 20) (15, 5) (16, 13) (17, 8) (18, 9) (19, 21) (20, 10) (21, 17)	\\ \hline
+\end{tabularx}
+\caption{Comparación de los resultados de los ficheros \texttt{n21}}
+\end{table}
+
+\end{enumerate}
+
+\end{document}ts
