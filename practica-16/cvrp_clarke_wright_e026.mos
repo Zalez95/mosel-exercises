@@ -1,0 +1,196 @@
+!@encoding CP1252
+model "cvrp_clarke_wright_e026"
+	uses "mmxprs";
+	uses "mmive";
+	setparam("XPRS_MAXTIME", 100);							! Limite de tiempo de ejecucion
+
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/E026-08m.dat";
+		nombre_problema	: string;							! Nombre del problema
+		n				: integer;							! Numero de vertices
+		min_vehiculos	: integer;							! Numero minimo de vehiculos
+		capacidad		: integer;							! Capacidad de los vehiculos
+	end-declarations
+
+	! INICIALIZACION 1
+	fopen(archivo_datos, F_INPUT);
+	read(nombre_problema);
+	read(n);
+	read(min_vehiculos);
+	read(capacidad);
+
+	! DECLARACIONES 2
+	declarations
+		vertices		= 1..n;
+
+		coords			: array(vertices, 1..2) of integer;		! Coordenadas de los vertices
+
+		c				: array(vertices, vertices) of integer;	! Matriz con el coste de cada arco
+		d				: array(vertices) of integer;			! Vector con la demanda de cada vertice (incluyendo origen)
+
+		savings			: array(vertices, vertices) of integer;	! Los ahorros de cada vertice
+		savings_list 	: array(1..n*n, 1..2) of integer;		! Lista con los indices de los ahorros
+		savings_marcas	: array(vertices, vertices) of integer;	! Matriz con los arcos que ya se encuentran en la lista de ahorros
+		
+		rutas_activas	: array(1..n-1) of integer;				! Vector de banderas con las rutas que se encuentra activas
+		rutas_arcos		: array(1..n-1, 1..n, 1..n) of integer;	! Los arcos de cada ruta
+		rutas_demandas	: array(1..n-1) of integer;				! Demanda total de cada ruta
+		
+		x				: array(vertices, vertices) of integer;	! Arcos de la solucion
+	end-declarations
+
+	! INICIALIZACION 2
+	! Leemos las coordenadas de los vertices
+	forall(i in vertices) do
+		tmp := 0;
+		read(tmp)
+		read(coords(i,1));
+		read(coords(i,2));
+	end-do
+
+	! Leemos las demandas de los vertices
+	forall(i in vertices) do
+		tmp := 0;
+		read(tmp)
+		read(d(i));
+	end-do
+	fclose(F_INPUT);
+
+	! Calculamos los costes a partir de las coordenadas leidas
+	forall(i in vertices, j in vertices)
+		c(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));
+
+	
+	!==============================================================================
+	! ALGORITMO DE AHORROS CLARKE-WRIGHT
+	!==============================================================================
+	! Calculamos los ahorros para cada punto i,j
+	forall(i in vertices, j in vertices | i <> j and i <> 1)
+		savings(i,j) := c(1,i) + c(1,j) - c(i,j);
+	
+	! Ordenamos los ahorros en orden descendiente
+	forall(k in 1..n*n) do
+		max_i		:= 0;
+		max_j		:= 0;
+		max_actual	:= -MAX_INT;
+		forall(i in vertices, j in vertices)
+			if (savings_marcas(i,j) = 0 and savings(i,j) > max_actual) then
+				max_i		:= i;
+				max_j		:= j;
+				max_actual	:= savings(i,j);
+			end-if
+		
+		savings_marcas(max_i,max_j) := 1;
+		savings_list(k,1) := max_i;
+		savings_list(k,2) := max_j;
+	end-do
+	
+	! Creamos la solución inicial con n-1 rutas con un solo nodo junto al deposito
+	forall(i in 1..n-1) do
+		rutas_activas(i)		:= 1;
+		rutas_arcos(i, 1, i+1)	:= 1;
+		rutas_arcos(i, i+1, 1)	:= 1;
+		rutas_demandas(i)		:= d(i+1);
+	end-do
+	
+	! Recorremos la lista de ahorros uniendo las rutas (siempre que se cumplan las
+	! restricciones)
+	forall(k in 1..n*n) do
+		i_actual := savings_list(k,1);
+		j_actual := savings_list(k,2);
+		
+		if (savings(i_actual,j_actual) = 0) then
+			! No hay mejora, dejamos de iterar
+			break;
+		end-if
+		
+		! Buscamos una ruta en la que i-1 sea el ultimo arco
+		ruta_i := -1;
+		forall(l1 in 1..n-1)
+			if (rutas_activas(l1) =  1 and rutas_arcos(l1, i_actual, 1) = 1) then
+				ruta_i := l1;
+				break;
+			end-if
+		
+		! Buscamos una ruta en la que 1-j sea el primer arco
+		ruta_j := -1;
+		forall(l1 in 1..n-1)
+			if (rutas_activas(l1) =  1 and rutas_arcos(l1, 1, j_actual) = 1) then
+				ruta_j := l1;
+				break;
+			end-if
+		
+		! Comprobamos que se cumplen las restricciones para unir la ruta
+		unir_ruta := 1;
+		if (ruta_i < 0) then
+			! ruta_i no existe
+			unir_ruta := 0;
+		elif (ruta_j < 0) then
+			! ruta_j no existe
+			unir_ruta := 0;
+		elif (ruta_i = ruta_j) then
+			! ruta_i y ruta_j son la misma ruta
+			unir_ruta := 0;
+		elif (rutas_demandas(ruta_i) + rutas_demandas(ruta_j) > capacidad) then
+			! no se cumple la restriccion de capacidad
+			unir_ruta := 0;
+		end-if
+		
+		if (unir_ruta = 1) then
+			!**** UNIMOS LAS RUTAS EN ruta_i Y BORRAMOS ruta_j ****
+			! Eliminamos la conexion entre i y el deposito
+			rutas_arcos(ruta_i, i_actual, 1) := 0;
+			
+			! Creamos la ruta entre i y j
+			rutas_arcos(ruta_i, i_actual, j_actual) := 1;
+			
+			! Añadimos los arcos restantes de la ruta_j a la ruta_i
+			vertice_actual := j_actual;
+			while(vertice_actual <> 1) do
+				vertice_siguiente := -1;
+				forall(l1 in vertices)
+					if (rutas_arcos(ruta_j, vertice_actual, l1) = 1) then
+						vertice_siguiente := l1;
+					end-if
+				
+				rutas_arcos(ruta_i, vertice_actual, vertice_siguiente) := 1;
+				vertice_actual := vertice_siguiente;
+			end-do
+			
+			! Actualizamos las demandas de ruta_i
+			rutas_demandas(ruta_i) += rutas_demandas(ruta_j) ;
+			
+			! Borramos ruta_j
+			rutas_activas(ruta_j) := 0;
+		end-if
+	end-do
+	
+	! Copiamos las rutas de la solucion a la matriz x
+	forall(k in 1..n-1 | rutas_activas(k) = 1)
+		forall(i in vertices, j in vertices | rutas_arcos(k,i,j) = 1)
+			x(i,j) := 1;
+	
+	! Calculamos el coste total de la ruta
+	z := sum(i in vertices, j in vertices | x(i,j) = 1) c(i,j);
+
+	!==============================================================================
+	! SALIDA
+	!==============================================================================
+	writeln("Practica 15 CVRP clarke-wright \"", nombre_problema, "\" (n=", n, "):");
+	writeln("\tz = ", z);
+	writeln("\tNumero de vehiculos = ", sum(j in vertices | x(1,j) = 1) 1);
+	write("\tarcos:");
+	forall(i in vertices, j in vertices | x(i,j) = 1)
+		write(" (", i, "," , j , ")");
+
+	! Dibujamos las flechas del grafico
+	plot := IVEaddplot("camino", IVE_BLUE);
+	forall(i in vertices, j in vertices | x(i,j) = 1)
+		IVEdrawarrow(plot, coords(i,1), coords(i,2), coords(j,1), coords(j,2));
+
+	! Dibujamos las etiquetas del grafico
+	plot := IVEaddplot("labels", IVE_BLACK);
+	forall(i in vertices)
+		IVEdrawlabel(plot, coords(i,1), coords(i,2), ""+i);
+end-model
