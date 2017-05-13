@@ -1,0 +1,80 @@
+!@encoding CP1252
+model "sched_10"
+	uses "mmxprs";
+	
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/ejemplo_10_tareas.dat";
+		n				: integer;					! Numero de tareas
+		M 				= 999999;
+	end-declarations
+	
+	! INICIALIZACION 1
+	initializations from archivo_datos
+		n;
+	end-initializations
+	
+	! DECLARACIONES 2
+	declarations
+		tareas	= 1..n;
+		
+		p		: array(tareas) of integer;			! Tiempo de proceso de las tareas
+		d		: array(tareas) of integer;			! Fecha de entrega de las tareas (due date)
+		w		: array(tareas) of integer;			! Penalizaciones por cada dia de retraso
+		r		: array(tareas) of integer;			! Tiempo de lanzamiento
+		
+		x		: array(tareas) of mpvar;			! Tiempos de inicio
+		s		: array(tareas) of mpvar;			! Adelanto de las tareas
+		t		: array(tareas) of mpvar;			! Retraso de las tareas
+		y		: array(tareas, tareas) of mpvar;	! Precedencias de las tareas
+	end-declarations
+	
+	! INICIALIZACION 2
+	initializations from archivo_datos
+		p;
+		d;
+		w;
+		r;
+	end-initializations
+	
+	
+	!==============================================================================
+	! MODELO
+	!==============================================================================
+	forall(j in tareas)
+		rest(j) := x(j) + p(j) + s(j) - t(j) = d(j);
+		
+	! X ha de ser mayor o igual al tiempo de inicio r
+	forall(j in tareas)
+		t_inicio(j) := x(j) >= r(j);
+		
+	! Garantizamos que ningun trabajo sea ejecutado al mismo tiempo
+	forall(i in tareas, j in tareas | i < j) do
+		no_mismo_tiempo1(i,j) := x(i) + p(i) - x(j) <= M * (1 - y(i,j));
+		no_mismo_tiempo2(i,j) := x(j) + p(j) - x(i) <= M * y(i,j);
+	end-do
+	
+	! s y x han de ser positivas o 0
+	forall(j in tareas) do
+		x_no_negativo(j) := x(j) >= 0;
+		s_no_negativo(j) := s(j) >= 0;
+		t_no_negativo(j) := t(j) >= 0;
+	end-do
+	
+	! y ha de ser una variable binaria
+	forall(i in tareas, j in tareas)
+		y(i,j) is_binary;
+		
+	! Valor a minimizar
+	z := sum(j in tareas) w(j) * t(j);
+	minimize(z);
+	
+	
+	!==============================================================================
+	! SALIDA
+	!==============================================================================
+	writeln("Práctica 17 scheduling formulacion disyuntiva (n=", n, "):");
+	writeln("\tz = ", getobjval);
+	forall(j in tareas)
+		writeln("\tx(", j, ") = ", x(j).sol, "\ts(", j, ") = ", s(j).sol, "\tr(", j, ") = ", t(j).sol);
+end-model
