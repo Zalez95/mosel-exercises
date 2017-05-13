@@ -1,0 +1,85 @@
+!@encoding CP1252
+model "cvrp_2_indices_oil_delivery"
+	uses "mmxprs";
+	setparam("XPRS_MAXTIME", 100);							! Limite de tiempo de ejecucion
+
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/oil-delivery.dat";
+		nombre_problema	: string;							! Nombre del problema
+		n				: integer;							! Numero de vertices
+		capacidad		: integer;							! Capacidad de los vehiculos
+	end-declarations
+
+	! INICIALIZACION 1
+	initializations from archivo_datos
+		nombre_problema;
+		n;
+		capacidad;
+	end-initializations
+
+	! DECLARACIONES 2
+	declarations
+		clientes	= 2..n;
+		vertices	= 1..n;
+
+		c			: array(vertices, vertices) of integer;	! Costes
+		d			: array(clientes) of integer;			! Demanda de los vertices incluyendo la demanda ficticia del origen
+
+		x		: array(vertices, vertices) of mpvar;		! Arcos de la solucion
+		u		: array(clientes) of mpvar;					! Para las restricciones de tucker y miller
+		k		: mpvar;									! Numero de vehiculos
+	end-declarations
+
+	! INICIALIZACION 2
+	initializations from archivo_datos
+		c;
+		d;
+	end-initializations
+
+	forall(i in vertices) c(i,i) := MAX_INT;
+
+	!==============================================================================
+	! MODELO
+	!==============================================================================
+	! Nos aseguramos de que cada cliente tenga un arco de entrada
+	forall(j in clientes)
+		cliente_entrada(j) := sum(i in vertices) x(i,j) = 1;
+
+	! Nos aseguramos de que cada cliente tenga un arco de salida
+	forall(i in clientes)
+		cliente_salida(i) := sum(j in vertices) x(i,j) = 1;
+
+	! Limitamos el numero de arcos de entrada al vertice inicial
+	inicial_entrada	:= sum(i in vertices) x(i,1) = k;
+
+	! Limitamos el numero de arcos de salida al vertice inicial
+	inicial_salida	:= sum(j in vertices) x(1,j) = k;
+
+	! Restricciones de Tucker y Miller
+	forall( i in clientes, j in clientes | i <> j and d(i) + d(j) < capacidad )
+		ticker_miller1(i,j) := u(i) - u(j) + capacidad * x(i,j) <= capacidad - d(j);
+
+	forall(i in clientes) do
+		tucker_miller2(i) := d(i) <= u(i);
+		tucker_miller3(i) := u(i) <= capacidad;
+	end-do
+
+	! x ha de ser una variable binaria
+	forall(i in vertices, j in vertices)
+		x(i,j) is_binary;
+
+	! Valor a minimizar
+	z := sum(i in vertices, j in vertices) c(i,j) * x(i,j);
+	minimize(z);
+
+	!==============================================================================
+	! SALIDA
+	!==============================================================================
+	writeln("Practica 15 CVRP 2 indices \"", nombre_problema, "\" (n=", n, "):");
+	writeln("\tz = ", getobjval);
+	writeln("\tk = ", k.sol);
+	write("\tarcos:");
+	forall(i in vertices, j in vertices | x(i,j).sol >= 0.99)
+		write(" (", i, "," , j , ")");
+end-model

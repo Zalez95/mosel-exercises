@@ -1,0 +1,114 @@
+!@encoding CP1252
+model "cvrp_redes_e021"
+	uses "mmxprs";
+	uses "mmive";
+	setparam("XPRS_MAXTIME", 100);							! Limite de tiempo de ejecucion
+
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/E021-04m.dat";
+		nombre_problema	: string;							! Nombre del problema
+		n				: integer;							! Numero de vertices
+		min_vehiculos	: integer;							! Numero minimo de vehiculos
+		capacidad		: integer;							! Capacidad de los vehiculos
+	end-declarations
+
+	! INICIALIZACION 1
+	fopen(archivo_datos, F_INPUT);
+	read(nombre_problema);
+	read(n);
+	read(min_vehiculos);
+	read(capacidad);
+
+	! DECLARACIONES 2
+	declarations
+		vertices	= 1..n;
+		clientes	= 2..n;
+
+		coords		: array(vertices, 1..2) of integer;
+
+		c			: array(vertices, vertices) of integer;	! Costes
+		d			: array(vertices) of integer;			! Demanda incluyendo la demanda ficticia del origen
+		b			: array(vertices) of integer;			! Ofertas de los vertices
+
+		x			: array(vertices, vertices) of mpvar;	! Arcos de la solucion
+		y			: array(vertices, vertices) of mpvar;	! Arcos de la solucion
+	end-declarations
+
+	! INICIALIZACION 2
+	! Leemos las coordenadas de los vertices
+	forall(i in vertices) do
+		tmp := 0;
+		read(tmp)
+		read(coords(i,1));
+		read(coords(i,2));
+	end-do
+
+	! Leemos las demandas de los vertices
+	forall(i in vertices) do
+		tmp := 0;
+		read(tmp)
+		read(d(i));
+	end-do
+	fclose(F_INPUT);
+
+	! Calculamos los costes a partir de las coordenadas leidas
+	forall(i in vertices, j in vertices)
+		c(i,j) := round(sqrt( (coords(i,1) - coords(j,1))^2 + (coords(i,2) - coords(j,2))^2 ));
+
+	! Calculamos las ofertas de cada vertice
+	b(1) := sum(i in clientes) d(i);
+	forall(i in clientes)
+		b(i) := -d(i);
+
+	!==============================================================================
+	! MODELO
+	!==============================================================================
+	! Nos aseguramos de que cada cliente tenga un arco de salida
+	forall(i in clientes)
+		cliente_salida(i) := sum(j in vertices) x(i,j) = 1;
+
+	! Nos aseguramos de que cada cliente tenga un arco de entrada
+	forall(j in clientes)
+		cliente_entrada(j) := sum(i in vertices) x(i,j) = 1;
+
+	! Nos aseguramos de que no se creen subtours aislados
+	forall(i in vertices)
+		no_subtours(i) := (sum(j in vertices) y(i,j)) - (sum(j in vertices) y(j,i)) = b(i);
+
+	! No se supere la capacidad de los vehiculos
+	forall(i in vertices, j in vertices)
+		cap(i,j) := y(i,j) <= capacidad * x(i,j);
+
+	! y ha de ser mayor o igual que 0
+	forall(i in vertices, j in vertices)
+		y_no_negativo(i,j) := y(i,j) >= 0;
+
+	! x ha de ser una variable binaria
+	forall(i in vertices, j in vertices)
+		x(i,j) is_binary;
+
+	! Valor a minimizar
+	z := sum(i in vertices, j in vertices) c(i,j) * x(i,j);
+	minimize(z);
+
+	!==============================================================================
+	! SALIDA
+	!==============================================================================
+	writeln("Practica 15 CVRP redes \"", nombre_problema, "\" (n=", n, "):");
+	writeln("\tz = ", getobjval);
+	writeln("\tNumero de vehiculos = ", sum(j in vertices | x(1,j).sol >= 0.99) 1);
+	write("\tarcos:");
+	forall(i in vertices, j in vertices | x(i,j).sol >= 0.99)
+		write(" (", i, "," , j , ")");
+
+	! Dibujamos las flechas del grafico
+	plot := IVEaddplot("camino", IVE_BLUE);
+	forall(i in vertices, j in vertices | x(i,j).sol >= 0.99)
+		IVEdrawarrow(plot, coords(i,1), coords(i,2), coords(j,1), coords(j,2));
+
+	! Dibujamos las etiquetas del grafico
+	plot := IVEaddplot("labels", IVE_BLACK);
+	forall(i in vertices)
+		IVEdrawlabel(plot, coords(i,1), coords(i,2), ""+i);
+end-model
