@@ -1,0 +1,139 @@
+!@encoding CP1252
+model "sched_multistart_busqueda_local_10_1"
+	uses "mmxprs";
+	setparam("XPRS_MAXTIME", 100);					! Limite de tiempo de ejecucion
+	
+	! FUNCIONES
+	! Retorna un numero aleatorio entre 1 y el limite superior dado
+	function random(limite_superior : integer) : integer
+		returned := round(random * limite_superior + 0.5);
+	end-function 
+	
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/sched_10_1.txt";
+		N				= [1, 100, 1000];
+		n				: integer;					! Numero de tareas
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen(archivo_datos, F_INPUT);
+	read(n);
+	
+	! DECLARACIONES 2
+	declarations
+		tareas			= 1..n;
+		
+		p				: array(tareas) of integer;	! Tiempo de procesamiento de las tareas
+		w				: array(tareas) of integer;	! Penalizaciones por cada dia de retraso
+		d				: array(tareas) of integer;	! Fecha de entrega de las tareas (due date)
+
+		precedencias	: array(tareas) of integer;	! Precendencias de las tareas de la mejor solucion
+		terminaciones	: array(tareas) of integer;	! Tiempo de finalizacion de cada tarea segun precedencias
+		
+		precedencias1	: array(tareas) of integer;	! Precendencias de las tareas de la solucion actual
+		terminaciones1	: array(tareas) of integer;	! Tiempo de finalizacion de cada tarea segun precedencias1
+		
+		precedencias2	: array(tareas) of integer;	! Precendencias de las tareas de la solucion despues del intercambio
+		terminaciones2	: array(tareas) of integer;	! Tiempo de finalizacion de cada tarea segun precedencias2
+		
+		en_precedencias	: array(tareas) of integer;	! Array que indica si una tarea ya se encuentra en precedencias
+	end-declarations
+	
+	! INICIALIZACION 2
+	forall (j in tareas) do
+		read( p(j) );
+		read( w(j) );
+		read( d(j) );
+	end-do
+	fclose(F_INPUT);
+	
+	
+	writeln("Practica 17 scheduling multistart con permutaciones aleatorias y ",
+			"busqueda local (n=", n, "):");	
+	forall (N_actual in N) do
+		!==============================================================================
+		! ALGORITMO MULTISTART CON PERMUTACIONES ALEATORIAS Y BUSQUEDA LOCAL
+		!==============================================================================
+		f := MAX_INT;
+		forall(K in 1..N_actual) do
+			! Reiniciamos los datos
+			forall(i in tareas)
+				en_precedencias(i) := 0;
+			
+			! Generamos una secuenciacion de tareas aleatoriamente
+			forall(i in tareas) do
+				indice := random(n);
+				while(en_precedencias(indice) = 1) do
+					indice := random(n);
+				end-do
+				
+				en_precedencias(indice) := 1;
+				precedencias1(i) := indice;
+			end-do
+			
+			! Calculamos los tiempos de terminacion de cada tarea
+			forall (j in tareas)
+				terminaciones1(precedencias1(j)) := sum(i in 1..j) p(precedencias1(i));
+			
+			! Calculamos el valor objetivo de la solucion como la tardanza total ponderada
+			f1 := sum(j in tareas | terminaciones1(j) > d(j))
+				w(j) * (terminaciones1(j) - d(j));
+			
+			! ____ BUSQUEDA LOCAL ____
+			flag := 0;
+			while (flag = 0) do
+				flag := 1;
+				forall (i1 in tareas, j1 in tareas | i1 < j1) do
+					! Hacemos el intercambio
+					precedencias2 := precedencias1;
+					precedencias2(i1) := precedencias1(j1);
+					precedencias2(j1) := precedencias1(i1);
+				
+					! Calculamos las tiempos de terminacion de cada tarea
+					forall (j2 in tareas)
+						terminaciones2(precedencias2(j2)) := sum(i2 in 1..j2) p(precedencias2(i2));
+			
+					! Calculamos el valor objetivo despues del intercambio		
+					f2 := sum(j2 in tareas | terminaciones2(j2) > d(j2))
+						w(j2) * (terminaciones2(j2) - d(j2));
+					
+					! Calculamos la mejora del intercambio respecto a la solucion actual
+					delta_ij := f1 - f2;
+					
+					! Si se mejora la solucion se realiza el intercambio
+					if (delta_ij > 0) then
+						f1 := f2;
+						precedencias1 := precedencias2;
+						terminaciones1 := terminaciones2;
+						flag := 0;
+					end-if
+				end-do
+			end-do
+			
+			! Calculamos la mejora de la solucion actual respecto a la optima
+			delta := f - f1;
+			
+			! Si existe mejora sustituimos la solucion optima por la actual
+			if (delta > 0) then
+				f := f1;
+				precedencias := precedencias1;
+				terminaciones := terminaciones1;
+			end-if
+		end-do
+		
+		
+		!==============================================================================
+		! SALIDA
+		!==============================================================================
+		writeln("N actual: ", N_actual);
+		writeln("\tSolucion optima = ", f);
+		write("\tPrecedencia de tareas =");
+		forall(j in tareas)
+			write(" ", precedencias(j));
+		write("\n\tTiempo de terminacion de las tareas =");
+		forall(j in tareas)
+			write(" ", terminaciones(precedencias(j)));
+		writeln("");
+	end-do
+end-model
