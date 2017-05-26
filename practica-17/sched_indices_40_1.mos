@@ -1,0 +1,79 @@
+!@encoding CP1252
+model "sched_indices_40_1"
+	uses "mmxprs";
+	setparam("XPRS_MAXTIME", 100);					! Limite de tiempo de ejecucion
+	
+	! DECLARACIONES 1
+	declarations
+		archivo_datos	= "data/sched_40_1.txt";
+		n				: integer;					! Numero de tareas
+	end-declarations
+	
+	! INICIALIZACION 1
+	fopen(archivo_datos, F_INPUT);
+	read(n);
+	
+	! DECLARACIONES 2
+	declarations
+		tareas	= 1..n;
+		
+		p		: array(tareas) of integer;			! Tiempo de procesamiento de las tareas
+		w		: array(tareas) of integer;			! Penalizaciones por cada dia de retraso
+		d		: array(tareas) of integer;			! Fecha de entrega de las tareas (due date)
+	end-declarations
+	
+	! INICIALIZACION 2
+	forall (j in tareas) do
+		read( p(j) );
+		read( w(j) );
+		read( d(j) );
+	end-do
+	fclose(F_INPUT);
+	
+	t_max := sum(j in tareas) p(j);
+		
+	! DECLARACIONES 3
+	declarations
+		tiempos	= 1..t_max;
+		x		: array(tareas, tiempos) of mpvar;	! Tiempos de inicio
+		epsilon	: array(tareas, tiempos) of integer;
+	end-declarations
+
+
+	!==============================================================================
+	! MODELO
+	!==============================================================================
+	! Cada trabajo solo puede empezar en un tiempo determinado
+	forall (j in tareas)
+		solo_un_tiempo(j) := sum(t in 1..(t_max-p(j)+1)) x(j,t) = 1;
+	
+	! Aseguramos que solo pueda ejecutarse un trabajo a la vez en cada tiempo
+	forall (t in tiempos)
+		solo_un_trabajo(t) := 
+				sum(j in tareas, s in tiempos | s >= maxlist(0, t-p(j)+1) and s <= t)
+						x(j,s) <= 1;
+	
+	! x es una variable binaria
+	forall (j in tareas, t in tiempos)
+		x(j,t) is_binary;
+		
+	! Valor de epsilon para tardiness total ponderado
+	forall (j in tareas, t in tiempos)
+		epsilon(j,t) := w(j) * maxlist( 0, t-1+p(j)-d(j) );
+	
+	! Valor objetivo
+	z := sum(j in tareas) sum(t in 1..(t_max-p(j)+1)) epsilon(j,t) * x(j,t);
+	minimize(z);
+	
+	
+	!==============================================================================
+	! SALIDA
+	!==============================================================================
+	writeln("Practica 17 scheduling formulacion de indices (n=", n, "):");
+	writeln("\tz = ", getobjval);
+	write("\tPrecedencias = ");
+	forall(t in tiempos, j in tareas | x(j,t).sol = 1)
+		write(" ", j);
+	writeln("");
+		
+end-model
